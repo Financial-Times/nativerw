@@ -1,0 +1,10 @@
+FROM alpine
+
+RUN apk --update add go git \
+  && rm -rf /var/cache/apk/*
+
+ADD . /
+
+VOLUME /out
+
+CMD /bin/sh /build.sh
