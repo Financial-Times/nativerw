@@ -1,34 +1,38 @@
 machine:
+   environment:
+     PROJECT_GOPATH: "${HOME}/.go_project"
+     PROJECT_PARENT_PATH: "${PROJECT_GOPATH}/src/github.com/${CIRCLE_PROJECT_USERNAME}"
+     PROJECT_PATH: "${PROJECT_PARENT_PATH}/${CIRCLE_PROJECT_REPONAME}"
+     GOPATH: "${HOME}/.go_workspace:${PROJECT_GOPATH}"
    services:
       - docker
+
+checkout:
+  post:
+    - mkdir -p "${PROJECT_PARENT_PATH}"
+    - rsync -avC "${HOME}/${CIRCLE_PROJECT_REPONAME}/" "${PROJECT_PATH}"
 
 dependencies:
   pre:
     - docker pull mongo:3.0.2
     - docker run -d -P mongo:3.0.2
-    - mkdir -p $HOME/.go_project/src/github.com/$CIRCLE_PROJECT_USERNAME
-    - ln -fs $HOME/$CIRCLE_PROJECT_REPONAME $HOME/.go_project/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
-    - |
-      echo 'export GOPATH=$GOPATH:$HOME/.go_project' >> ~/.circlerc
-    - go get github.com/axw/gocov/gocov; go get github.com/matm/gocov-html; go get -u github.com/jstemmer/go-junit-report; go get -u github.com/kardianos/govendor
-    - govendor sync:
-        pwd:
-          ../.go_project/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+    - go get -u github.com/kardianos/govendor
+  override:
+     - cd $PROJECT_PATH && govendor sync
+     - cd $PROJECT_PATH && go build -v
 
 test:
   pre:
+    - go get -u github.com/jstemmer/go-junit-report
     - go get github.com/mattn/goveralls
+    - cd $PROJECT_PATH && wget https://raw.githubusercontent.com/Financial-Times/cookiecutter-upp-golang/master/coverage.sh && chmod +x coverage.sh
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/golang
     - |
       export MONGO_TEST_URL=$(docker port $(docker ps | grep mongo | awk '{print $1}') 27017);
-      go test -race -v ./... | grep -v vendor | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
+      cd $PROJECT_PATH && govendor test -race -v +local | go-junit-report > $CIRCLE_TEST_REPORTS/golang/junit.xml
     - |
       export MONGO_TEST_URL=$(docker port $(docker ps | grep mongo | awk '{print $1}') 27017);
-      go list ./... | grep -v vendor | awk -F/ '{print $4}' | xargs -I {} go test -v -cover -race -coverprofile=$CIRCLE_ARTIFACTS/{}.out ./{}
-    - cd $CIRCLE_ARTIFACTS && sed -i '1d' *.out
-    - |
-      echo "mode: atomic" > $CIRCLE_ARTIFACTS/overall-coverage.result
-    - cd $CIRCLE_ARTIFACTS && cat *.out >> overall-coverage.result
+      cd $PROJECT_PATH && ./coverage.sh
   post:
-    - goveralls -coverprofile=$CIRCLE_ARTIFACTS/overall-coverage.result -service=circle-ci -repotoken=$COVERALLS_TOKEN
+    - goveralls -coverprofile=$CIRCLE_ARTIFACTS/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
