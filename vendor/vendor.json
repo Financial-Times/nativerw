@@ -31,6 +31,13 @@
 			"versionExact": "0.1.0"
 		},
 		{
+			"checksumSHA1": "OFu4xJEIjiI8Suu+j/gabfp+y6Q=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/davecgh/go-spew/spew",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+			"revisionTime": "2017-01-30T11:31:45Z"
+		},
+		{
 			"checksumSHA1": "g/V4qrXjUGG9B+e3hB+4NAYJ5Gs=",
 			"path": "github.com/gorilla/context",
 			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
@@ -75,6 +82,36 @@
 			"revisionTime": "2016-02-09T18:59:13Z",
 			"version": "v1.0",
 			"versionExact": "v1.0"
+		},
+		{
+			"checksumSHA1": "zKKp5SZ3d3ycKe4EKMNT0BqAWBw=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+			"revisionTime": "2017-01-30T11:31:45Z"
+		},
+		{
+			"checksumSHA1": "EO+jcRet/AJ6IY3lBO8l8BLsZWg=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/stretchr/objx",
+			"path": "github.com/stretchr/objx",
+			"revision": "4d4bfba8f1d1027c4fdbe371823030df51419987",
+			"revisionTime": "2017-01-30T11:31:45Z"
+		},
+		{
+			"checksumSHA1": "q1qqfgDOGwfEuMlbHWNjYf09ACM=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "69483b4bd14f5845b5a1e55bca19e954e827f1d0",
+			"revisionTime": "2016-09-25T01:54:16Z",
+			"version": "v1.1.4",
+			"versionExact": "v1.1.4"
+		},
+		{
+			"checksumSHA1": "Je6cJkYWj2SoaHDMGpE00BGi9sw=",
+			"path": "github.com/stretchr/testify/mock",
+			"revision": "69483b4bd14f5845b5a1e55bca19e954e827f1d0",
+			"revisionTime": "2016-09-25T01:54:16Z",
+			"version": "v1.1.4",
+			"versionExact": "v1.1.4"
 		},
 		{
 			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
