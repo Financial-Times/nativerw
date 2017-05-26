@@ -40,9 +40,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		if len(*mongos) != 0 {
-			conf.Mongos = *mongos
+		if len(*mongos) == 0 {
+			logging.Error("No mongo paths specified")
+			os.Exit(1)
 		}
+
+		conf.Mongos = *mongos
 
 		logging.Info(fmt.Sprintf("Using configuration %# v \n", pretty.Formatter(conf)))
 

@@ -20,12 +20,9 @@ docker build -t coco/nativerw .
 ```
 
 ## Running
-
-`$GOPATH/bin/nativerw $GOPATH/src/github.com/Financial-Times/nativerw/config.json`
-
-You can override the mongos with -mongos flag, e.g.
-
-`$GOPATH/bin/nativerw -mongos=mongo1:port,mongo2:port $GOPATH/src/github.com/Financial-Times/nativerw/config.json`
+The following params can be injected in the nativerw app on startup through environment variables:
+ - `MONGOS` This env var is mandatory. Mongo addresses to connect to in format: host1[:port1][,host2[:port2],...] the app will exit (with `exit code 1`) if it is not set.
+ - `CONFIG` Config file in json format. If not set, the default `config.json` will be used.
 
 ## API
 

@@ -19,7 +19,7 @@ func TestConfigFromReader(t *testing.T) {
          },
          "dbName": "native-store",
          "collections": [
-            "brightcove",
+            "video",
             "methode",
             "wordpress",
             "v1-metadata"
@@ -30,7 +30,7 @@ func TestConfigFromReader(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, randomness, config.Mongos)
 	assert.Equal(t, "native-store", config.DbName)
-	assert.Equal(t, []string{"brightcove", "methode", "wordpress", "v1-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "methode", "wordpress", "v1-metadata"}, config.Collections)
 	assert.Equal(t, "8080", config.Server.Port)
 }
 
@@ -55,7 +55,7 @@ func TestConfigFromFile(t *testing.T) {
          },
          "dbName": "native-store",
          "collections": [
-            "brightcove",
+            "video",
             "methode",
             "wordpress",
             "v1-metadata"
@@ -68,6 +68,6 @@ func TestConfigFromFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, randomness, config.Mongos)
 	assert.Equal(t, "native-store", config.DbName)
-	assert.Equal(t, []string{"brightcove", "methode", "wordpress", "v1-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "methode", "wordpress", "v1-metadata"}, config.Collections)
 	assert.Equal(t, "8080", config.Server.Port)
 }
