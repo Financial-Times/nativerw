@@ -41,7 +41,7 @@ func main() {
 		}
 
 		if len(*mongos) == 0 {
-			logging.Error("Not mongo paths specified.")
+			logging.Error("No mongo paths specified")
 			os.Exit(1)
 		}
 
