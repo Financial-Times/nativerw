@@ -20,8 +20,15 @@ func main() {
 	mongos := cliApp.String(cli.StringOpt{
 		Name:   "mongos",
 		Value:  "",
-		Desc:   "Mongo addresses to connect to in format: host1[:port1][,host2[:port2],...]",
+		Desc:   "Mongo addresses to connect to in format: host1:port][,host2:port2,...]",
 		EnvVar: "MONGOS",
+	})
+
+	mongoNodeCount := cliApp.Int(cli.IntOpt{
+		Name:   "mongo_node_count",
+		Value:  3,
+		Desc:   "Number of mongoDB instances",
+		EnvVar: "MONGO_NODE_COUNT",
 	})
 
 	configFile := cliApp.String(cli.StringOpt{
@@ -40,8 +47,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		if len(*mongos) == 0 {
-			logging.Error("No mongo paths specified")
+		if err := db.CheckMongoUrls(*mongos, *mongoNodeCount); err != nil {
+			logging.Error(fmt.Sprintf("Provided mongoDB urls are invalid: %s", err.Error()))
 			os.Exit(1)
 		}
 
@@ -67,7 +74,7 @@ func main() {
 			connection.EnsureIndex()
 		}()
 
-		err = http.ListenAndServe(":"+conf.Server.Port, nil)
+		err = http.ListenAndServe(":" + conf.Server.Port, nil)
 		if err != nil {
 			logging.Error(fmt.Sprintf("Couldn't set up HTTP listener: %+v\n", err))
 		}

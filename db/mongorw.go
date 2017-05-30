@@ -13,6 +13,7 @@ import (
 	"github.com/pborman/uuid"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strings"
 )
 
 const uuidName = "uuid"
@@ -225,4 +226,23 @@ func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan
 	}()
 
 	return ids, nil
+}
+
+func CheckMongoUrls(providedMongoUrls string, expectedMongoNodeCount int) error {
+	mongoUrls := strings.Split(providedMongoUrls, ",")
+	actualMongoNodeCount := len(mongoUrls)
+	if actualMongoNodeCount != expectedMongoNodeCount {
+		return fmt.Errorf("The provided list of MongoDB URLs should have %d instances, but it has %d instead. Provided MongoDB URLs are: %s", expectedMongoNodeCount, actualMongoNodeCount, providedMongoUrls)
+	}
+
+	for _, mongoUrl := range mongoUrls {
+		urlComponents := strings.Split(mongoUrl, ":")
+		noOfUrlComponents := len(urlComponents)
+
+		if noOfUrlComponents != 2 {
+			return fmt.Errorf("One of the MongoDB URLs is invalid: %s. It should have host and port.", mongoUrl)
+		}
+	}
+
+	return nil
 }

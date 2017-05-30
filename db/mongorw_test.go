@@ -266,3 +266,33 @@ func TestCancelReadIDs(t *testing.T) {
 		count++
 	}
 }
+
+func TestCheckMongoUrlsValidUrls(t *testing.T) {
+	err := CheckMongoUrls("host:port,host2:port2", 2)
+
+	assert.Nil(t, err)
+}
+
+func TestCheckMongoUrlsFewerUrlsThanExpected(t *testing.T) {
+	err := CheckMongoUrls("host:port,host2:port2", 3)
+
+	assert.NotNil(t, err)
+}
+
+func TestCheckMongoUrlsMissingPort(t *testing.T) {
+	err := CheckMongoUrls("host:port,host2:", 3)
+
+	assert.NotNil(t, err)
+}
+
+func TestCheckMongoUrlsMissingHost(t *testing.T) {
+	err := CheckMongoUrls("host:port,:port", 3)
+
+	assert.NotNil(t, err)
+}
+
+func TestCheckMongoUrlsInvalidSeparator(t *testing.T) {
+	err := CheckMongoUrls("host:port;host1:port1", 2)
+
+	assert.NotNil(t, err)
+}
