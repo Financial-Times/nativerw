@@ -20,7 +20,7 @@ func main() {
 	mongos := cliApp.String(cli.StringOpt{
 		Name:   "mongos",
 		Value:  "",
-		Desc:   "Mongo addresses to connect to in format: host1:port][,host2:port2,...]",
+		Desc:   "Mongo addresses to connect to in format: host1:port1[,host2:port2,...]",
 		EnvVar: "MONGOS",
 	})
 
