@@ -239,7 +239,7 @@ func CheckMongoUrls(providedMongoUrls string, expectedMongoNodeCount int) error 
 		urlComponents := strings.Split(mongoUrl, ":")
 		noOfUrlComponents := len(urlComponents)
 
-		if noOfUrlComponents != 2 {
+		if !(noOfUrlComponents == 2 && urlComponents[0] != "" && urlComponents[1] != ""){
 			return fmt.Errorf("One of the MongoDB URLs is invalid: %s. It should have host and port.", mongoUrl)
 		}
 	}
