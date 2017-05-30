@@ -280,13 +280,13 @@ func TestCheckMongoUrlsFewerUrlsThanExpected(t *testing.T) {
 }
 
 func TestCheckMongoUrlsMissingPort(t *testing.T) {
-	err := CheckMongoUrls("host:port,host2:", 3)
+	err := CheckMongoUrls("host:port,host2:", 2)
 
 	assert.NotNil(t, err)
 }
 
 func TestCheckMongoUrlsMissingHost(t *testing.T) {
-	err := CheckMongoUrls("host:port,:port", 3)
+	err := CheckMongoUrls("host:port,:port", 2)
 
 	assert.NotNil(t, err)
 }
