@@ -21,7 +21,8 @@ docker build -t coco/nativerw .
 
 ## Running
 The following params can be injected in the nativerw app on startup through environment variables:
- - `MONGOS` This env var is mandatory. Mongo addresses to connect to in format: host1[:port1][,host2[:port2],...] the app will exit (with `exit code 1`) if it is not set.
+ - `MONGOS` This env var is mandatory. Mongo addresses to connect to in format: host1:port1[,host2:port2,...] the app will exit (with `exit code 1`) it is not valid. The `MONGOS` value is considered to be valid if the number of provided URLs matches the provided `MONGO_NODE_COUNT` and each MongoDb URL has host:port.
+ - `MONGO_NODE_COUNT` The number of MongoDB instances. Default value is 3.
  - `CONFIG` Config file in json format. If not set, the default `config.json` will be used.
 
 ## API
