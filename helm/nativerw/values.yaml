@@ -7,7 +7,7 @@ service:
 replicaCount: 2
 image:
   repository: coco/nativerw
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 #resources:
 #  limits:
 #    memory: 256Mi
