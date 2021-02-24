@@ -19,15 +19,17 @@ type Resource struct {
 	Content        interface{}
 	ContentType    string
 	OriginSystemID string
+	SchemaVersion  string
 }
 
 // Wrap creates a new resource
-func Wrap(content interface{}, resourceID, contentType, originSystemID string) *Resource {
+func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion string) *Resource {
 	return &Resource{
 		UUID:           resourceID,
 		Content:        content,
 		ContentType:    contentType,
 		OriginSystemID: originSystemID,
+		SchemaVersion:  schemaVersion,
 	}
 }
 
@@ -72,7 +74,6 @@ func InMapperForContentType(contentType string) (InMapper, error) {
 	}
 
 	return nil, ErrUnsupportedContentType
-
 }
 
 func jsonVariantInMapper(r io.ReadCloser) (interface{}, error) {

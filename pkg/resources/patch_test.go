@@ -218,7 +218,6 @@ func TestFailedMongoOnWrite(t *testing.T) {
 }
 
 func TestPatchContentReflection(t *testing.T) {
-
 	tests := []struct {
 		name           string
 		description    string
@@ -341,7 +340,6 @@ func TestPatchContentReflection(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		var patchC map[string]interface{}
 		var originalC map[string]interface{}
 		var expectedResult map[string]interface{}

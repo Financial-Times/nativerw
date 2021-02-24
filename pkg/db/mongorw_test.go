@@ -19,9 +19,10 @@ func init() {
 
 func generateResource() *mapper.Resource {
 	return &mapper.Resource{
-		UUID:        uuid.NewUUID().String(),
-		Content:     map[string]interface{}{"randomness": uuid.NewUUID().String()},
-		ContentType: "application/json",
+		UUID:          uuid.NewUUID().String(),
+		Content:       map[string]interface{}{"randomness": uuid.NewUUID().String()},
+		ContentType:   "application/json",
+		SchemaVersion: "14",
 	}
 }
 
@@ -41,6 +42,7 @@ func TestReadWriteDelete(t *testing.T) {
 	assert.Equal(t, expectedResource.ContentType, res.ContentType)
 	assert.Equal(t, expectedResource.UUID, res.UUID)
 	assert.Equal(t, expectedResource.Content, res.Content)
+	assert.Equal(t, expectedResource.SchemaVersion, res.SchemaVersion)
 
 	err = connection.Delete("methode", expectedResource.UUID)
 	assert.NoError(t, err)
@@ -147,7 +149,8 @@ func TestOpenWillReturnConnectionIfAlreadyInitialised(t *testing.T) {
 		return &mongoConnection{dbName: "faked"}, nil
 	})
 
-	mongo.connection.Block()
+	_, err := mongo.connection.Block()
+	assert.NoError(t, err)
 
 	connection, err := mongo.Open()
 	assert.NoError(t, err)
@@ -161,7 +164,7 @@ func TestOpenFailsIfInitialisationFailed(t *testing.T) {
 		return nil, errors.New("i failed")
 	})
 
-	mongo.connection.Block()
+	_, _ = mongo.connection.Block()
 
 	connection, err := mongo.Open()
 	assert.Error(t, err)

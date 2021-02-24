@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
 
 	"github.com/Financial-Times/go-logger"
@@ -94,10 +94,26 @@ func router(mongo db.DB) {
 
 	r.HandleFunc("/{collection}/__ids", resources.Filter(resources.ReadIDs(mongo)).ValidateAccessForCollection(mongo).Build()).Methods("GET")
 
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.ReadContent(mongo)).ValidateAccess(mongo).Build()).Methods("GET")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo)).ValidateAccess(mongo).CheckNativeHash(mongo).Build()).Methods("PUT")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo)).ValidateAccess(mongo).CheckNativeHash(mongo).Build()).Methods("PATCH")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.DeleteContent(mongo)).ValidateAccess(mongo).Build()).Methods("DELETE")
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.ReadContent(mongo)).
+		ValidateAccess(mongo).
+		Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo)).
+		ValidateAccess(mongo).
+		CheckNativeHash(mongo).
+		ValidateSchemaVersion().
+		Build()).
+		Methods("PUT")
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo)).
+		ValidateAccess(mongo).
+		CheckNativeHash(mongo).
+		ValidateSchemaVersion().
+		Build()).
+		Methods("PATCH")
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.DeleteContent(mongo)).
+		ValidateAccess(mongo).
+		Build()).
+		Methods("DELETE")
 
 	r.HandleFunc("/__health", resources.Healthchecks(mongo))
 	r.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(resources.GoodToGo(mongo)))

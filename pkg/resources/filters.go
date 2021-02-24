@@ -12,6 +12,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	schemaVerisonHeader = "X-Schema-Version"
+)
+
 var uuidRegexp = regexp.MustCompile("^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}$")
 
 func validateAccess(mongo db.Connection, collectionID, resourceID string) error {
@@ -54,6 +58,28 @@ func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
 
 		next(w, r)
 	}
+	return f
+}
+
+// ValidateSchemaVersion validates whether the X-Schema-Version header is provided and if not fails the request.
+func (f *Filters) ValidateSchemaVersion() *Filters {
+	next := f.next
+	f.next = func(w http.ResponseWriter, r *http.Request) {
+		sv := r.Header.Get(schemaVerisonHeader)
+		if sv == "" {
+			defer r.Body.Close()
+
+			tid := obtainTxID(r)
+			msg := fmt.Sprintf("request is missing the %v header", schemaVerisonHeader)
+			logger.WithTransactionID(tid).Error(msg)
+			http.Error(w, msg, http.StatusBadRequest)
+
+			return
+		}
+
+		next(w, r)
+	}
+
 	return f
 }
 

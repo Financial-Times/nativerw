@@ -102,7 +102,7 @@ func (m *mongoDB) openMongoSession() (*mongoConnection, error) {
 
 	session.SetMode(mgo.Strong, true)
 	collections := createMapWithAllowedCollections(m.config.Collections)
-	connection := &mongoConnection{m.config.DbName, session, collections}
+	connection := &mongoConnection{m.config.DBName, session, collections}
 
 	return connection, nil
 }
@@ -163,6 +163,7 @@ func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) e
 		"content":          resource.Content,
 		"content-type":     resource.ContentType,
 		"origin-system-id": resource.OriginSystemID,
+		"schema-version":   resource.SchemaVersion,
 	}
 
 	_, err := coll.Upsert(bson.D{bson.DocElem{Name: uuidName, Value: bsonUUID}}, bsonResource)
@@ -188,20 +189,21 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	}
 
 	uuidData := bsonResource["uuid"].(bson.Binary).Data
+
+	res = &mapper.Resource{
+		UUID:        uuid.UUID(uuidData).String(),
+		Content:     bsonResource["content"],
+		ContentType: bsonResource["content-type"].(string),
+	}
+
 	originSystemID, found := bsonResource["origin-system-id"]
-	if !found {
-		res = &mapper.Resource{
-			UUID:        uuid.UUID(uuidData).String(),
-			Content:     bsonResource["content"],
-			ContentType: bsonResource["content-type"].(string),
-		}
-	} else {
-		res = &mapper.Resource{
-			UUID:           uuid.UUID(uuidData).String(),
-			Content:        bsonResource["content"],
-			ContentType:    bsonResource["content-type"].(string),
-			OriginSystemID: originSystemID.(string),
-		}
+	if found {
+		res.OriginSystemID = originSystemID.(string)
+	}
+
+	schemaVersion, found := bsonResource["schema-version"]
+	if found {
+		res.SchemaVersion = schemaVersion.(string)
 	}
 
 	return res, true, nil

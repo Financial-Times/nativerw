@@ -26,6 +26,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		tid := obtainTxID(r)
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
+		schemaVersion := r.Header.Get(schemaVerisonHeader)
 
 		resource, found, err := connection.Read(collectionID, resourceID)
 		if err != nil {
@@ -77,7 +78,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		patchResult := mergeContent(PatchC, originalC)
 		resource.Content = patchResult
 
-		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader)
+		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion)
 		if errWrite := connection.Write(collectionID, wrappedContent); errWrite != nil {
 			msg := "Writing to mongoDB failed"
 			logger.
@@ -89,10 +90,12 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		logMsg := fmt.Sprintf("Successfully updated, collection=%s, origin-system-id=%s, schema-version=%s",
+			collectionID, originSystemIDHeader, schemaVersion)
 		logger.
 			WithMonitoringEvent("UpdatedToNative", tid, contentTypeHeader).
 			WithUUID(resourceID).
-			Info(fmt.Sprintf("Successfully updated, collection=%s, origin-system-id=%s", collectionID, originSystemIDHeader))
+			Info(logMsg)
 
 		om, err := mapper.OutMapperForContentType(contentTypeHeader)
 		if err != nil {
@@ -104,6 +107,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Add("Content-Type", contentTypeHeader)
 		w.Header().Add("Origin-System-Id", resource.OriginSystemID)
+		w.Header().Add(schemaVerisonHeader, schemaVersion)
 		err = om(w, resource)
 		if err != nil {
 			msg := fmt.Sprintf("Unable to extract native content from resource with id %v. %v", resourceID, err.Error())
@@ -129,7 +133,6 @@ func mergeContent(patchC, originalC map[string]interface{}) map[string]interface
 	for key := range patchC {
 		_, oExists := originalC[key]
 		if oExists && compareConditions(patchC[key], originalC[key]) {
-
 			switch patchC[key].(type) {
 			case []interface{}:
 				res[key] = patchC[key]
