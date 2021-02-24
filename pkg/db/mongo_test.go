@@ -20,7 +20,7 @@ func startMongo(t *testing.T) DB {
 
 	conf := config.Configuration{
 		Mongos:      mongoURL,
-		DbName:      "native-store",
+		DBName:      "native-store",
 		Collections: []string{"methode"},
 	}
 

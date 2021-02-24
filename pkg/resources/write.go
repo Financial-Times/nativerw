@@ -26,12 +26,13 @@ func WriteContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		resourceID := mux.Vars(r)["resource"]
 		tid := obtainTxID(r)
 
-		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
+		schemaVersion := r.Header.Get(schemaVerisonHeader)
 
-		inMapper, err := mapper.InMapperForContentType(contentTypeHeader)
+		contentType := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
+		inMapper, err := mapper.InMapperForContentType(contentType)
 		if err != nil {
 			msg := "Unsupported content-type"
-			logger.WithMonitoringEvent("SaveToNative", tid, contentTypeHeader).WithUUID(resourceID).WithError(err).Error(msg)
+			logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).WithError(err).Error(msg)
 			http.Error(w, fmt.Sprintf("%s\n%v\n", msg, err), http.StatusBadRequest)
 			return
 		}
@@ -40,21 +41,21 @@ func WriteContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		content, err := inMapper(r.Body)
 		if err != nil {
 			msg := "Extracting content from HTTP body failed"
-			logger.WithMonitoringEvent("SaveToNative", tid, contentTypeHeader).WithUUID(resourceID).WithError(err).Error(msg)
+			logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).WithError(err).Error(msg)
 			http.Error(w, fmt.Sprintf("%s\n%v\n", msg, err), http.StatusBadRequest)
 			return
 		}
 
-		wrappedContent := mapper.Wrap(content, resourceID, contentTypeHeader, originSystemIDHeader)
+		wrappedContent := mapper.Wrap(content, resourceID, contentType, originSystemIDHeader, schemaVersion)
 
 		if err := connection.Write(collectionID, wrappedContent); err != nil {
 			msg := "Writing to mongoDB failed"
-			logger.WithMonitoringEvent("SaveToNative", tid, contentTypeHeader).WithUUID(resourceID).WithError(err).Error(msg)
+			logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).WithError(err).Error(msg)
 			http.Error(w, fmt.Sprintf("%s\n%v\n", msg, err), http.StatusInternalServerError)
 			return
 		}
 
-		logger.WithMonitoringEvent("SaveToNative", tid, contentTypeHeader).WithUUID(resourceID).Info(fmt.Sprintf("Successfully saved, collection=%s, origin-system-id=%s",
-			collectionID, originSystemIDHeader))
+		logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).Info(
+			fmt.Sprintf("Successfully saved, collection=%s, origin-system-id=%s schema-version=%s", collectionID, originSystemIDHeader, schemaVersion))
 	}
 }
