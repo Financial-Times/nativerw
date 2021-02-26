@@ -26,7 +26,8 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		tid := obtainTxID(r)
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
-		schemaVersion := r.Header.Get(schemaVerisonHeader)
+		schemaVersion := r.Header.Get(SchemaVersionHeader)
+		schemaRevision := r.Header.Get(ContentRevisionHeader)
 
 		resource, found, err := connection.Read(collectionID, resourceID)
 		if err != nil {
@@ -78,7 +79,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		patchResult := mergeContent(PatchC, originalC)
 		resource.Content = patchResult
 
-		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion)
+		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion, schemaRevision)
 		if errWrite := connection.Write(collectionID, wrappedContent); errWrite != nil {
 			msg := "Writing to mongoDB failed"
 			logger.
@@ -107,7 +108,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Add("Content-Type", contentTypeHeader)
 		w.Header().Add("Origin-System-Id", resource.OriginSystemID)
-		w.Header().Add(schemaVerisonHeader, schemaVersion)
+		w.Header().Add(SchemaVersionHeader, schemaVersion)
 		err = om(w, resource)
 		if err != nil {
 			msg := fmt.Sprintf("Unable to extract native content from resource with id %v. %v", resourceID, err.Error())

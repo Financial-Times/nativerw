@@ -14,15 +14,30 @@ import (
 	"github.com/Financial-Times/nativerw/pkg/mapper"
 )
 
+type fixedTimestampCreator struct{}
+
+func (f *fixedTimestampCreator) CreateTimestamp() string {
+	return "2020-11-25T21:48:05.999Z"
+}
+
 func TestWriteContent(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Write", "methode", &mapper.Resource{UUID: "a-real-uuid", Content: map[string]interface{}{}, ContentType: "application/json"}).Return(nil)
+	connection.On("Write",
+		"methode",
+		&mapper.Resource{
+			UUID:            "a-real-uuid",
+			Content:         map[string]interface{}{},
+			ContentType:     "application/json",
+			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+		Return(nil)
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
@@ -43,13 +58,16 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 	connection.On("Write",
 		"methode",
 		&mapper.Resource{
-			UUID:        "a-real-uuid",
-			Content:     map[string]interface{}{},
-			ContentType: "application/json; charset=utf-8"}).
+			UUID:            "a-real-uuid",
+			Content:         map[string]interface{}{},
+			ContentType:     "application/json; charset=utf-8",
+			ContentRevision: "2020-11-25T21:48:05.999Z"}).
 		Return(nil)
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
@@ -66,10 +84,19 @@ func TestWriteFailed(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Write", "methode", &mapper.Resource{UUID: "a-real-uuid", Content: map[string]interface{}{}, ContentType: "application/json"}).Return(errors.New("i failed"))
+	connection.On("Write",
+		"methode",
+		&mapper.Resource{
+			UUID:            "a-real-uuid",
+			Content:         map[string]interface{}{},
+			ContentType:     "application/json",
+			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+		Return(errors.New("i failed"))
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
@@ -92,10 +119,19 @@ func TestDefaultsToBinaryMapping(t *testing.T) {
 	content, err := inMapper(ioutil.NopCloser(strings.NewReader(`{}`)))
 	assert.NoError(t, err)
 
-	connection.On("Write", "methode", &mapper.Resource{UUID: "a-real-uuid", Content: content, ContentType: "application/octet-stream"}).Return(errors.New("i failed"))
+	connection.On("Write",
+		"methode",
+		&mapper.Resource{
+			UUID:            "a-real-uuid",
+			Content:         content,
+			ContentType:     "application/octet-stream",
+			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+		Return(errors.New("i failed"))
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
@@ -113,8 +149,10 @@ func TestFailedJSON(t *testing.T) {
 
 	mongo.On("Open").Return(connection, nil)
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`i am not json`))

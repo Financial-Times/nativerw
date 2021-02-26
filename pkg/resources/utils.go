@@ -3,18 +3,15 @@ package resources
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 
 	"github.com/Financial-Times/go-logger"
+	transactionutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 const (
-	txHeaderKey    = "X-Request-Id"
-	txHeaderLength = 20
+	txHeaderKey = "X-Request-Id"
 )
-
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func writeMessage(w http.ResponseWriter, msg string, status int) {
 	data, _ := json.Marshal(struct {
@@ -31,17 +28,9 @@ func writeMessage(w http.ResponseWriter, msg string, status int) {
 func obtainTxID(req *http.Request) string {
 	txID := req.Header.Get(txHeaderKey)
 	if txID == "" {
-		return "tid_" + randSeq(txHeaderLength)
+		return transactionutils.NewTransactionID()
 	}
 	return txID
-}
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))] //nolint:gosec
-	}
-	return string(b)
 }
 
 func extractAttrFromHeader(r *http.Request, attrName, defValue, tid, resourceID string) string {

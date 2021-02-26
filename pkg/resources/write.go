@@ -12,7 +12,7 @@ import (
 )
 
 // WriteContent writes a new native record
-func WriteContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -26,7 +26,12 @@ func WriteContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		resourceID := mux.Vars(r)["resource"]
 		tid := obtainTxID(r)
 
-		schemaVersion := r.Header.Get(schemaVerisonHeader)
+		schemaVersion := r.Header.Get(SchemaVersionHeader)
+
+		schemaRevision := r.Header.Get(ContentRevisionHeader)
+		if schemaRevision == "" {
+			schemaRevision = ts.CreateTimestamp()
+		}
 
 		contentType := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
 		inMapper, err := mapper.InMapperForContentType(contentType)
@@ -46,7 +51,7 @@ func WriteContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		wrappedContent := mapper.Wrap(content, resourceID, contentType, originSystemIDHeader, schemaVersion)
+		wrappedContent := mapper.Wrap(content, resourceID, contentType, originSystemIDHeader, schemaVersion, schemaRevision)
 
 		if err := connection.Write(collectionID, wrappedContent); err != nil {
 			msg := "Writing to mongoDB failed"
