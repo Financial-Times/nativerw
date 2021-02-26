@@ -15,21 +15,23 @@ var (
 
 // Resource is the representation of a native resource
 type Resource struct {
-	UUID           string
-	Content        interface{}
-	ContentType    string
-	OriginSystemID string
-	SchemaVersion  string
+	UUID            string
+	Content         interface{}
+	ContentType     string
+	OriginSystemID  string
+	SchemaVersion   string
+	ContentRevision string
 }
 
 // Wrap creates a new resource
-func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion string) *Resource {
+func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion, contentRevision string) *Resource {
 	return &Resource{
-		UUID:           resourceID,
-		Content:        content,
-		ContentType:    contentType,
-		OriginSystemID: originSystemID,
-		SchemaVersion:  schemaVersion,
+		UUID:            resourceID,
+		Content:         content,
+		ContentType:     contentType,
+		OriginSystemID:  originSystemID,
+		SchemaVersion:   schemaVersion,
+		ContentRevision: contentRevision,
 	}
 }
 

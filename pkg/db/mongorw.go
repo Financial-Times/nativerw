@@ -16,7 +16,10 @@ import (
 	"github.com/Financial-Times/nativerw/pkg/mapper"
 )
 
-const uuidName = "uuid"
+const (
+	uuidName            = "uuid"
+	contentRevisionName = "content-revision"
+)
 
 type mongoDB struct {
 	config     *config.Configuration
@@ -128,8 +131,8 @@ func (ma *mongoConnection) EnsureIndex() {
 	defer newSession.Close()
 
 	index := mgo.Index{
-		Name:       "uuid-index",
-		Key:        []string{"uuid"},
+		Name:       "uuid-revision-index",
+		Key:        []string{"uuid", "content-revision"},
 		Background: true,
 		Unique:     true,
 	}
@@ -158,15 +161,21 @@ func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) e
 	coll := newSession.DB(ma.dbName).C(collection)
 
 	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(resource.UUID))}
+
 	bsonResource := map[string]interface{}{
 		"uuid":             bsonUUID,
 		"content":          resource.Content,
 		"content-type":     resource.ContentType,
 		"origin-system-id": resource.OriginSystemID,
 		"schema-version":   resource.SchemaVersion,
+		"content-revision": resource.ContentRevision,
 	}
 
-	_, err := coll.Upsert(bson.D{bson.DocElem{Name: uuidName, Value: bsonUUID}}, bsonResource)
+	_, err := coll.Upsert(
+		bson.D{
+			bson.DocElem{Name: uuidName, Value: bsonUUID},
+			bson.DocElem{Name: contentRevisionName, Value: resource.ContentRevision}},
+		bsonResource)
 
 	return err
 }
@@ -204,6 +213,11 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	schemaVersion, found := bsonResource["schema-version"]
 	if found {
 		res.SchemaVersion = schemaVersion.(string)
+	}
+
+	contentRevision, found := bsonResource["content-revision"]
+	if found {
+		res.ContentRevision = contentRevision.(string)
 	}
 
 	return res, true, nil

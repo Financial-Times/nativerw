@@ -26,6 +26,7 @@ func TestWrap(t *testing.T) {
 		originSystemID   string
 		publishReference string
 		schemaVersion    string
+		contentRevision  string
 		wantResource     Resource
 	}{
 		{
@@ -39,6 +40,7 @@ func TestWrap(t *testing.T) {
 			"methode",
 			"tid_blahblahblah",
 			"3",
+			"2020-11-25T21:48:05.999Z",
 			Resource{
 				UUID: "9694733e-163a-4393-801f-000ab7de5041",
 				Content: map[string]interface{}{
@@ -46,15 +48,16 @@ func TestWrap(t *testing.T) {
 					"body":   "This is a body.",
 					"brands": []string{"Lex", "Markets"},
 				},
-				ContentType:    "application/json",
-				OriginSystemID: "methode",
-				SchemaVersion:  "3",
+				ContentType:     "application/json",
+				OriginSystemID:  "methode",
+				SchemaVersion:   "3",
+				ContentRevision: "2020-11-25T21:48:05.999Z",
 			},
 		},
 	}
 
 	for _, test := range tests {
-		result := Wrap(test.resource, test.uuid, test.contentType, test.originSystemID, test.schemaVersion)
+		result := Wrap(test.resource, test.uuid, test.contentType, test.originSystemID, test.schemaVersion, test.contentRevision)
 		if !reflect.DeepEqual(*result, test.wantResource) {
 			t.Errorf("Resource: %v\n, Expected: %v\n, Actual: %v", test.resource, test.wantResource, result)
 		}

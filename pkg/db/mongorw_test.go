@@ -78,10 +78,10 @@ func TestEnsureIndexes(t *testing.T) {
 	assert.NoError(t, err)
 	count := 0
 	for _, index := range indexes {
-		if index.Name == "uuid-index" {
+		if index.Name == "uuid-revision-index" {
 			assert.True(t, index.Background)
 			assert.True(t, index.Unique)
-			assert.Equal(t, []string{"uuid"}, index.Key)
+			assert.Equal(t, []string{"uuid", "content-revision"}, index.Key)
 			count = count + 1
 		}
 	}

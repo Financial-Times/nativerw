@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	schemaVerisonHeader = "X-Schema-Version"
+	SchemaVersionHeader   = "X-Schema-Version"
+	ContentRevisionHeader = "X-Content-Revision"
 )
 
 var uuidRegexp = regexp.MustCompile("^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}$")
@@ -61,16 +62,16 @@ func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
 	return f
 }
 
-// ValidateSchemaVersion validates whether the X-Schema-Version header is provided and if not fails the request.
-func (f *Filters) ValidateSchemaVersion() *Filters {
+// ValidateHeader ensures that a specific header is provided and if not fails the request
+func (f *Filters) ValidateHeader(headerName string) *Filters {
 	next := f.next
 	f.next = func(w http.ResponseWriter, r *http.Request) {
-		sv := r.Header.Get(schemaVerisonHeader)
+		sv := r.Header.Get(headerName)
 		if sv == "" {
 			defer r.Body.Close()
 
 			tid := obtainTxID(r)
-			msg := fmt.Sprintf("request is missing the %v header", schemaVerisonHeader)
+			msg := fmt.Sprintf("request is missing the %v header", headerName)
 			logger.WithTransactionID(tid).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)
 

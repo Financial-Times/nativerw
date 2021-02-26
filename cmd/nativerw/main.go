@@ -90,6 +90,8 @@ func main() {
 }
 
 func router(mongo db.DB) {
+	ts := resources.CurrentTimestampCreator{}
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/{collection}/__ids", resources.Filter(resources.ReadIDs(mongo)).ValidateAccessForCollection(mongo).Build()).Methods("GET")
@@ -98,16 +100,17 @@ func router(mongo db.DB) {
 		ValidateAccess(mongo).
 		Build()).
 		Methods("GET")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo)).
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo, &ts)).
 		ValidateAccess(mongo).
 		CheckNativeHash(mongo).
-		ValidateSchemaVersion().
+		ValidateHeader(resources.SchemaVersionHeader).
 		Build()).
 		Methods("PUT")
 	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo)).
 		ValidateAccess(mongo).
 		CheckNativeHash(mongo).
-		ValidateSchemaVersion().
+		ValidateHeader(resources.SchemaVersionHeader).
+		ValidateHeader(resources.ContentRevisionHeader).
 		Build()).
 		Methods("PATCH")
 	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.DeleteContent(mongo)).
