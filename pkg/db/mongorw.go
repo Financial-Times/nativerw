@@ -190,7 +190,7 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 
 	var bsonResource map[string]interface{}
 
-	if err = coll.Find(bson.M{uuidName: bsonUUID}).One(&bsonResource); err != nil {
+	if err = coll.Find(bson.M{uuidName: bsonUUID}).Sort("-content-revision").One(&bsonResource); err != nil {
 		if err == mgo.ErrNotFound {
 			return res, false, nil
 		}
