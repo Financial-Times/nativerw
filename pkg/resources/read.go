@@ -75,6 +75,8 @@ func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 
 func ReadIDs(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("Entering ReadIDs")
+
 		connection, err := mongo.Open()
 		if err != nil {
 			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
