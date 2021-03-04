@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/Financial-Times/go-logger"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 
 	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/gorilla/mux"
@@ -50,7 +51,7 @@ func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
 		if err := validateAccess(connection, collectionID, resourceID); err != nil {
 			defer r.Body.Close()
 
-			tid := obtainTxID(r)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			msg := fmt.Sprintf("Invalid collectionId (%v) or resourceId (%v)", collectionID, resourceID)
 			logger.WithTransactionID(tid).WithError(err).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)
@@ -70,7 +71,7 @@ func (f *Filters) ValidateHeader(headerName string) *Filters {
 		if sv == "" {
 			defer r.Body.Close()
 
-			tid := obtainTxID(r)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			msg := fmt.Sprintf("request is missing the %v header", headerName)
 			logger.WithTransactionID(tid).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)
@@ -99,7 +100,7 @@ func (f *Filters) ValidateAccessForCollection(mongo db.DB) *Filters {
 
 		if err := validateAccessForCollection(connection, collection); err != nil {
 			defer r.Body.Close()
-			tid := obtainTxID(r)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			msg := fmt.Sprintf("Invalid collectionId (%v)", collection)
 			logger.WithTransactionID(tid).WithError(err).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)

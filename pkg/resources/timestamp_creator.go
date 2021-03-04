@@ -3,11 +3,11 @@ package resources
 import "time"
 
 type TimestampCreator interface {
-	CreateTimestamp() string
+	CreateTimestamp() int64
 }
 
 type CurrentTimestampCreator struct{}
 
-func (tc *CurrentTimestampCreator) CreateTimestamp() string {
-	return time.Now().Format("2006-01-02T15:04:05.999Z")
+func (tc *CurrentTimestampCreator) CreateTimestamp() int64 {
+	return time.Now().UTC().UnixNano()
 }

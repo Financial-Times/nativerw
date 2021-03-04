@@ -25,7 +25,7 @@ func TestPatchContent(t *testing.T) {
 	updatedContent := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
-	contentRevision := "2020-11-25T21:48:05.999Z"
+	var contentRevision int64 = 1436773875771421417
 
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)
@@ -55,7 +55,7 @@ func TestShouldNotUpdatePatchContentEmptyRequestBody(t *testing.T) {
 	existingContent := map[string]interface{}{"body": "data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
-	contentRevision := "2020-11-25T21:48:05.999Z"
+	var contentRevision int64 = 1436773875771421417
 
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: existingContent, ContentRevision: contentRevision}, true, nil)
@@ -86,7 +86,7 @@ func TestPatchContentWithCharsetDirective(t *testing.T) {
 	contentType := "application/json"
 	contentTypeWithCharset := "application/json; charset=utf-8"
 	httpMethod := "PATCH"
-	contentRevision := "2020-11-25T21:48:05.999Z"
+	var contentRevision int64 = 1436773875771421417
 
 	mongo.On("Open").Return(connection, nil)
 
@@ -124,7 +124,7 @@ func TestPatchFailedOnWrite(t *testing.T) {
 	content := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
-	contentRevision := "2020-11-25T21:48:05.999Z"
+	var contentRevision int64 = 1436773875771421417
 
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)

@@ -46,7 +46,7 @@ type Connection interface {
 	Write(collection string, resource *mapper.Resource) error
 	Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error)
 	ReadIDs(ctx context.Context, collection string) (chan string, error)
-	Count(collection string, uuidString string, contentRevision string) (count int, err error)
+	Count(collection string, uuidString string, contentRevision int64) (count int, err error)
 	Close()
 }
 
@@ -218,13 +218,13 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 
 	contentRevision, found := bsonResource["content-revision"]
 	if found {
-		res.ContentRevision = contentRevision.(string)
+		res.ContentRevision = contentRevision.(int64)
 	}
 
 	return res, true, nil
 }
 
-func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision string) (count int, err error) {
+func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int, err error) {
 	newSession := ma.session.Copy()
 	defer newSession.Close()
 

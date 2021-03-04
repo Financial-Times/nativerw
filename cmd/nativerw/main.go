@@ -94,28 +94,35 @@ func router(mongo db.DB) {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/{collection}/__ids", resources.Filter(resources.ReadIDs(mongo)).ValidateAccessForCollection(mongo).Build()).Methods("GET")
-
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.ReadContent(mongo)).
-		ValidateAccess(mongo).
-		Build()).
+	r.HandleFunc("/{collection}/__ids",
+		resources.Filter(resources.ReadIDs(mongo)).
+			ValidateAccessForCollection(mongo).
+			Build()).
 		Methods("GET")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo, &ts)).
-		ValidateAccess(mongo).
-		CheckNativeHash(mongo).
-		ValidateHeader(resources.SchemaVersionHeader).
-		Build()).
+
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.ReadContent(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.WriteContent(mongo, &ts)).
+			ValidateAccess(mongo).
+			CheckNativeHash(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
+			Build()).
 		Methods("POST")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo, &ts)).
-		ValidateAccess(mongo).
-		CheckNativeHash(mongo).
-		ValidateHeader(resources.SchemaVersionHeader).
-		ValidateHeader(resources.ContentRevisionHeader).
-		Build()).
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.PatchContent(mongo, &ts)).
+			ValidateAccess(mongo).
+			CheckNativeHash(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
+			Build()).
 		Methods("PATCH")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.DeleteContent(mongo)).
-		ValidateAccess(mongo).
-		Build()).
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.DeleteContent(mongo)).
+			ValidateAccess(mongo).
+			Build()).
 		Methods("DELETE")
 
 	r.HandleFunc("/__health", resources.Healthchecks(mongo))

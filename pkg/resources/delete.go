@@ -8,6 +8,7 @@ import (
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/nativerw/pkg/db"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 // DeleteContent deletes the given resource from the given collection
@@ -23,7 +24,7 @@ func DeleteContent(mongo db.DB) func(writer http.ResponseWriter, req *http.Reque
 
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
-		tid := obtainTxID(r)
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
 
 		if err := connection.Delete(collectionID, resourceID); err != nil {
