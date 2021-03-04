@@ -30,7 +30,7 @@ The following params can be injected in the nativerw app on startup through envi
 The nativerw supports the following endpoints:
 
 * GET `/{collection}/{uuid}` retrieves the native document, and returns it in either json or binary (depending on how it is saved).
-* PUT `/{collection}/{uuid}` upserts a new native document for the given uuid.
+* POST `/{collection}/{uuid}` upserts a new native document for the given uuid.
 * PATCH `/{collection}/{uuid}` updates specific fields for the given uuid.
 * GET `/{collection}/__ids` returns all uuids for the given collection on a **best efforts basis**. If the collection is very large, the endpoint is likely to time out (timeout duration is hardcoded to 10s) before all uuids have been returned. This will be indistinguishable from a request which sends back the complete set of uuids, however, if there are less than ~10,000 uuids returned, you can be fairly confident you have the entire set.
 * GET `/__gtg` the good to go endpoint.

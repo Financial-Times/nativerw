@@ -46,6 +46,7 @@ type Connection interface {
 	Write(collection string, resource *mapper.Resource) error
 	Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error)
 	ReadIDs(ctx context.Context, collection string) (chan string, error)
+	Count(collection string, uuidString string, contentRevision string) (count int, err error)
 	Close()
 }
 
@@ -221,6 +222,21 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	}
 
 	return res, true, nil
+}
+
+func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision string) (count int, err error) {
+	newSession := ma.session.Copy()
+	defer newSession.Close()
+
+	coll := newSession.DB(ma.dbName).C(collection)
+
+	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
+
+	n, err := coll.Find(bson.M{uuidName: bsonUUID, contentRevisionName: contentRevision}).Count()
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan string, error) {

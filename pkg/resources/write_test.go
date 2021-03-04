@@ -33,14 +33,39 @@ func TestWriteContent(t *testing.T) {
 			ContentType:     "application/json",
 			ContentRevision: "2020-11-25T21:48:05.999Z"}).
 		Return(nil)
+	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+
+	req.Header.Add("Content-Type", "application/json")
+
+	router.ServeHTTP(w, req)
+	mongo.AssertExpectations(t)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestWriteContentWhenContentRevisionExists(t *testing.T) {
+	mongo := new(MockDB)
+	connection := new(MockConnection)
+
+	mongo.On("Open").Return(connection, nil)
+	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+		Return(1, nil)
+
+	ts := fixedTimestampCreator{}
+
+	router := mux.NewRouter()
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json")
 
@@ -63,14 +88,16 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 			ContentType:     "application/json; charset=utf-8",
 			ContentRevision: "2020-11-25T21:48:05.999Z"}).
 		Return(nil)
+	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 
@@ -93,13 +120,16 @@ func TestWriteFailed(t *testing.T) {
 			ContentRevision: "2020-11-25T21:48:05.999Z"}).
 		Return(errors.New("i failed"))
 
+	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+		Return(0, nil)
+
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json")
 
@@ -131,10 +161,10 @@ func TestDefaultsToBinaryMapping(t *testing.T) {
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/a-fake-type")
 
@@ -152,10 +182,10 @@ func TestFailedJSON(t *testing.T) {
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", strings.NewReader(`i am not json`))
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`i am not json`))
 
 	req.Header.Add("Content-Type", "application/json")
 

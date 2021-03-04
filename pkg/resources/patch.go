@@ -13,7 +13,7 @@ import (
 	"github.com/Financial-Times/nativerw/pkg/mapper"
 )
 
-func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -27,7 +27,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
 		schemaVersion := r.Header.Get(SchemaVersionHeader)
-		schemaRevision := r.Header.Get(ContentRevisionHeader)
+		contentRevision := ts.CreateTimestamp()
 
 		resource, found, err := connection.Read(collectionID, resourceID)
 		if err != nil {
@@ -79,7 +79,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		patchResult := mergeContent(PatchC, originalC)
 		resource.Content = patchResult
 
-		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion, schemaRevision)
+		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion, contentRevision)
 		if errWrite := connection.Write(collectionID, wrappedContent); errWrite != nil {
 			msg := "Writing to mongoDB failed"
 			logger.

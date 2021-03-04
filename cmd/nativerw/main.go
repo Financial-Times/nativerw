@@ -105,8 +105,8 @@ func router(mongo db.DB) {
 		CheckNativeHash(mongo).
 		ValidateHeader(resources.SchemaVersionHeader).
 		Build()).
-		Methods("PUT")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo)).
+		Methods("POST")
+	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo, &ts)).
 		ValidateAccess(mongo).
 		CheckNativeHash(mongo).
 		ValidateHeader(resources.SchemaVersionHeader).
