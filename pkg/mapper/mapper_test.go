@@ -26,7 +26,7 @@ func TestWrap(t *testing.T) {
 		originSystemID   string
 		publishReference string
 		schemaVersion    string
-		contentRevision  string
+		contentRevision  int64
 		wantResource     Resource
 	}{
 		{
@@ -40,7 +40,7 @@ func TestWrap(t *testing.T) {
 			"methode",
 			"tid_blahblahblah",
 			"3",
-			"2020-11-25T21:48:05.999Z",
+			1436773875771421417,
 			Resource{
 				UUID: "9694733e-163a-4393-801f-000ab7de5041",
 				Content: map[string]interface{}{
@@ -51,7 +51,7 @@ func TestWrap(t *testing.T) {
 				ContentType:     "application/json",
 				OriginSystemID:  "methode",
 				SchemaVersion:   "3",
-				ContentRevision: "2020-11-25T21:48:05.999Z",
+				ContentRevision: 1436773875771421417,
 			},
 		},
 	}

@@ -20,11 +20,11 @@ type Resource struct {
 	ContentType     string
 	OriginSystemID  string
 	SchemaVersion   string
-	ContentRevision string
+	ContentRevision int64
 }
 
 // Wrap creates a new resource
-func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion, contentRevision string) *Resource {
+func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion string, contentRevision int64) *Resource {
 	return &Resource{
 		UUID:            resourceID,
 		Content:         content,

@@ -16,8 +16,8 @@ import (
 
 type fixedTimestampCreator struct{}
 
-func (f *fixedTimestampCreator) CreateTimestamp() string {
-	return "2020-11-25T21:48:05.999Z"
+func (f *fixedTimestampCreator) CreateTimestamp() int64 {
+	return 1436773875771421417
 }
 
 func TestWriteContent(t *testing.T) {
@@ -31,9 +31,9 @@ func TestWriteContent(t *testing.T) {
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
 			ContentType:     "application/json",
-			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+			ContentRevision: 1436773875771421417}).
 		Return(nil)
-	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -56,7 +56,7 @@ func TestWriteContentWhenContentRevisionExists(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
 		Return(1, nil)
 
 	ts := fixedTimestampCreator{}
@@ -86,9 +86,9 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
 			ContentType:     "application/json; charset=utf-8",
-			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+			ContentRevision: 1436773875771421417}).
 		Return(nil)
-	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -117,10 +117,10 @@ func TestWriteFailed(t *testing.T) {
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
 			ContentType:     "application/json",
-			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+			ContentRevision: 1436773875771421417}).
 		Return(errors.New("i failed"))
 
-	connection.On("Count", "methode", "a-real-uuid", "2020-11-25T21:48:05.999Z").
+	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -155,7 +155,7 @@ func TestDefaultsToBinaryMapping(t *testing.T) {
 			UUID:            "a-real-uuid",
 			Content:         content,
 			ContentType:     "application/octet-stream",
-			ContentRevision: "2020-11-25T21:48:05.999Z"}).
+			ContentRevision: 1436773875771421417}).
 		Return(errors.New("i failed"))
 
 	ts := fixedTimestampCreator{}

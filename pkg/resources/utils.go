@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Financial-Times/go-logger"
-	transactionutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 const (
@@ -23,14 +22,6 @@ func writeMessage(w http.ResponseWriter, msg string, status int) {
 	if _, err := w.Write(data); err != nil {
 		logger.WithError(err).Error("could not build response JSON body")
 	}
-}
-
-func obtainTxID(req *http.Request) string {
-	txID := req.Header.Get(txHeaderKey)
-	if txID == "" {
-		return transactionutils.NewTransactionID()
-	}
-	return txID
 }
 
 func extractAttrFromHeader(r *http.Request, attrName, defValue, tid, resourceID string) string {
