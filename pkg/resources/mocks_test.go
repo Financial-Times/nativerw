@@ -66,3 +66,8 @@ func (m *MockConnection) Read(collection string, uuidString string) (res *mapper
 	args := m.Called(collection, uuidString)
 	return args.Get(0).(*mapper.Resource), args.Bool(1), args.Error(2)
 }
+
+func (m *MockConnection) Count(collection string, uuidString string, contentRevision string) (count int, err error) {
+	args := m.Called(collection, uuidString, contentRevision)
+	return args.Int(0), args.Error(1)
+}

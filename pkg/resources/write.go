@@ -28,9 +28,9 @@ func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 
 		schemaVersion := r.Header.Get(SchemaVersionHeader)
 
-		schemaRevision := r.Header.Get(ContentRevisionHeader)
-		if schemaRevision == "" {
-			schemaRevision = ts.CreateTimestamp()
+		contentRevision := r.Header.Get(ContentRevisionHeader)
+		if contentRevision == "" {
+			contentRevision = ts.CreateTimestamp()
 		}
 
 		contentType := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
@@ -51,7 +51,21 @@ func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 			return
 		}
 
-		wrappedContent := mapper.Wrap(content, resourceID, contentType, originSystemIDHeader, schemaVersion, schemaRevision)
+		cnt, err := connection.Count(collectionID, resourceID, contentRevision)
+		if err != nil {
+			msg := "Failed to check if content-revision exists!"
+			logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).WithError(err).Error(msg)
+			http.Error(w, fmt.Sprintf("%s\n%v\n", msg, err), http.StatusInternalServerError)
+		}
+		if cnt > 0 {
+			logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).Info(
+				fmt.Sprintf("Content revision already exists. Skipping save, collection=%s, origin-system-id=%s schema-version=%s content-revision=%s",
+					collectionID, originSystemIDHeader, schemaVersion, contentRevision))
+
+			return
+		}
+
+		wrappedContent := mapper.Wrap(content, resourceID, contentType, originSystemIDHeader, schemaVersion, contentRevision)
 
 		if err := connection.Write(collectionID, wrappedContent); err != nil {
 			msg := "Writing to mongoDB failed"

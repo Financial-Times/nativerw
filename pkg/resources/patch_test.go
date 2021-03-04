@@ -25,13 +25,16 @@ func TestPatchContent(t *testing.T) {
 	updatedContent := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
+	contentRevision := "2020-11-25T21:48:05.999Z"
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}}, true, nil)
-	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: updatedContent, ContentType: contentType}).Return(nil)
+	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)
+	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: updatedContent, ContentType: contentType, ContentRevision: contentRevision}).Return(nil)
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -52,13 +55,16 @@ func TestShouldNotUpdatePatchContentEmptyRequestBody(t *testing.T) {
 	existingContent := map[string]interface{}{"body": "data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
+	contentRevision := "2020-11-25T21:48:05.999Z"
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: existingContent}, true, nil)
-	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: existingContent, ContentType: contentType}).Return(nil)
+	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: existingContent, ContentRevision: contentRevision}, true, nil)
+	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: existingContent, ContentType: contentType, ContentRevision: contentRevision}).Return(nil)
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -80,20 +86,24 @@ func TestPatchContentWithCharsetDirective(t *testing.T) {
 	contentType := "application/json"
 	contentTypeWithCharset := "application/json; charset=utf-8"
 	httpMethod := "PATCH"
+	contentRevision := "2020-11-25T21:48:05.999Z"
 
 	mongo.On("Open").Return(connection, nil)
 
-	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}}, true, nil)
+	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)
 	connection.On("Write",
 		collection,
 		&mapper.Resource{
-			UUID:        uuid,
-			Content:     content,
-			ContentType: contentTypeWithCharset}).
+			UUID:            uuid,
+			Content:         content,
+			ContentType:     contentTypeWithCharset,
+			ContentRevision: contentRevision}).
 		Return(nil)
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -114,13 +124,16 @@ func TestPatchFailedOnWrite(t *testing.T) {
 	content := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
+	contentRevision := "2020-11-25T21:48:05.999Z"
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}}, true, nil)
-	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: content, ContentType: contentType}).Return(errors.New("i failed"))
+	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)
+	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: content, ContentType: contentType, ContentRevision: contentRevision}).Return(errors.New("i failed"))
+
+	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -144,8 +157,10 @@ func TestPatchFailedOnRead(t *testing.T) {
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", collection, uuid).Return((*mapper.Resource)(nil), false, errors.New("i failed"))
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -171,8 +186,10 @@ func TestPatchFailedJSON(t *testing.T) {
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: content}, true, nil)
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods(httpMethod)
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
 
 	w := httptest.NewRecorder()
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
@@ -189,8 +206,10 @@ func TestFailedMongoOnPatch(t *testing.T) {
 	mongo := new(MockDB)
 	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods("PATCH")
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods("PATCH")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/methode/a-real-uuid", strings.NewReader(`{}`))
@@ -205,8 +224,10 @@ func TestFailedMongoOnWrite(t *testing.T) {
 	mongo := new(MockDB)
 	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
 
+	ts := fixedTimestampCreator{}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo)).Methods("PATCH")
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods("PATCH")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("PATCH", "/methode/a-real-uuid", strings.NewReader(`{}`))

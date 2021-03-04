@@ -48,13 +48,13 @@ func TestHashCheckMatches(t *testing.T) {
 	connection.On("Read", "methode", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 	req.Header.Add("X-Native-Hash", "5c7c9d98996c2d0692e1d6ded53faa1833cdadd26693bb8cb4084181")
 
 	router.ServeHTTP(w, req)
@@ -87,13 +87,13 @@ func TestHashCheckDoesntMatch(t *testing.T) {
 	connection.On("Read", "methode", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 	req.Header.Add("X-Native-Hash", "any-other-value")
 
 	router.ServeHTTP(w, req)
@@ -116,13 +116,13 @@ func TestNoContentFound(t *testing.T) {
 	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{}, false, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 	req.Header.Add("X-Native-Hash", "5c7c9d98996c2d0692e1d6ded53faa1833cdadd26693bb8cb4084181")
 
 	router.ServeHTTP(w, req)
@@ -145,13 +145,13 @@ func TestHashCheckContentReadFails(t *testing.T) {
 	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{}, false, errors.New("i failed"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 	req.Header.Add("X-Native-Hash", "5c7c9d98996c2d0692e1d6ded53faa1833cdadd26693bb8cb4084181")
 
 	router.ServeHTTP(w, req)
@@ -180,13 +180,13 @@ func TestHashCheckJsonMarshalFails(t *testing.T) {
 	connection.On("Read", "methode", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 	req.Header.Add("X-Native-Hash", "5c7c9d98996c2d0692e1d6ded53faa1833cdadd26693bb8cb4084181")
 
 	router.ServeHTTP(w, req)
@@ -208,12 +208,12 @@ func TestNoHashCheckIfNoHeader(t *testing.T) {
 	mongo.On("Open").Return(connection, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 
 	router.ServeHTTP(w, req)
 
@@ -231,13 +231,13 @@ func TestFailedMongoDuringHashFilter(t *testing.T) {
 	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("PUT")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PUT", "/methode/a-real-uuid", body)
+	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", body)
 
 	router.ServeHTTP(w, req)
 

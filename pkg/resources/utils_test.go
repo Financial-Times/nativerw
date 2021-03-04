@@ -23,12 +23,12 @@ func TestObtainTxIDGeneratesANewOneIfNoneAvailable(t *testing.T) {
 }
 
 func TestExtractContentTypeHeaderReturnsOctetStreamIfMissing(t *testing.T) {
-	req, _ := http.NewRequest("PUT", "/", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/", strings.NewReader(`{}`))
 	contentTypeHeader := extractAttrFromHeader(req, "Content-Type", "application/octet-stream", "", "")
 	assert.Equal(t, "application/octet-stream", contentTypeHeader)
 }
 func TestExtractContentTypeHeaderReturnsContentType(t *testing.T) {
-	req, _ := http.NewRequest("PUT", "/", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/", strings.NewReader(`{}`))
 	req.Header.Add("Content-Type", "application/a-fake-type")
 
 	contentTypeHeader := extractAttrFromHeader(req, "Content-Type", "application/a-fake-type", "", "")
