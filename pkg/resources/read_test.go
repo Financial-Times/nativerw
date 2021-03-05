@@ -19,7 +19,13 @@ func TestReadContent(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/json", Content: map[string]interface{}{"uuid": "fake-data"}}, true, nil)
+	connection.On("Read", "methode", "a-real-uuid").
+		Return(
+			&mapper.Resource{
+				ContentType: "application/json",
+				Content:     map[string]interface{}{"uuid": "fake-data"}},
+			true,
+			nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
@@ -32,6 +38,29 @@ func TestReadContent(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 	assert.Equal(t, `{"uuid":"fake-data"}`, strings.TrimSpace(w.Body.String()))
+}
+
+func TestReadRevisions(t *testing.T) {
+	mongo := new(MockDB)
+	connection := new(MockConnection)
+
+	mongo.On("Open").Return(connection, nil)
+	connection.On("ReadRevisions", "universal-publishing", "a-real-uuid").
+		Return(
+			[]int64{1, 2, 3},
+			nil)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/{collection}/{resource}/revisions", ReadRevisions(mongo)).Methods("GET")
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/universal-publishing/a-real-uuid/revisions", http.NoBody)
+
+	router.ServeHTTP(w, req)
+	mongo.AssertExpectations(t)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	assert.Equal(t, `[1,2,3]`, strings.TrimSpace(w.Body.String()))
 }
 
 func TestReadContentWithCharsetDirective(t *testing.T) {

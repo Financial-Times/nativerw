@@ -46,6 +46,7 @@ type Connection interface {
 	Write(collection string, resource *mapper.Resource) error
 	Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error)
 	ReadIDs(ctx context.Context, collection string) (chan string, error)
+	ReadRevisions(collection string, uuidString string) (res []int64, err error)
 	Count(collection string, uuidString string, contentRevision int64) (count int, err error)
 	Close()
 }
@@ -222,6 +223,34 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	}
 
 	return res, true, nil
+}
+
+func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
+	newSession := ma.session.Copy()
+	defer newSession.Close()
+
+	coll := newSession.DB(ma.dbName).C(collection)
+
+	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
+
+	var bsonResource []map[string]interface{}
+	if err = coll.Find(bson.M{uuidName: bsonUUID}).Select(bson.M{"content-revision": 1}).All(&bsonResource); err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	res = []int64{}
+	for _, v := range bsonResource {
+		s, ok := v["content-revision"].(int64)
+		if !ok {
+			return nil, err
+		}
+		res = append(res, s)
+	}
+
+	return res, nil
 }
 
 func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int, err error) {

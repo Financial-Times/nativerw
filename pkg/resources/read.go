@@ -74,6 +74,54 @@ func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ReadRevisions returns a list with all the revisions for an uuid
+func ReadRevisions(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		connection, err := mongo.Open()
+		if err != nil {
+			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
+			return
+		}
+
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
+		vars := mux.Vars(r)
+		resourceID := vars["resource"]
+		collection := vars["collection"]
+
+		revisions, err := connection.ReadRevisions(collection, resourceID)
+		if err != nil {
+			msg := "Reading from mongoDB failed."
+			logger.WithTransactionID(tid).WithUUID(resourceID).WithError(err).Error(msg)
+			http.Error(w, fmt.Sprintf(msg+": %v", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+
+		if len(revisions) == 0 {
+			msg := fmt.Sprintf("Resource not found, collection=%v, id=%v", collection, resourceID)
+			logger.WithTransactionID(tid).WithUUID(resourceID).Info(msg)
+
+			respBody, _ := json.Marshal(map[string]string{"message": msg})
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, string(respBody))
+			return
+		}
+
+		respBody, err := json.Marshal(revisions)
+		if err != nil {
+			msg := "Unable to serialize revisions."
+			logger.WithTransactionID(tid).WithUUID(resourceID).WithError(err).Error(msg)
+			http.Error(w, fmt.Sprintf(msg+": %v", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, string(respBody))
+	}
+}
+
 func ReadIDs(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		connection, err := mongo.Open()
