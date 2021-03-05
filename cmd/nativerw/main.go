@@ -105,6 +105,11 @@ func router(mongo db.DB) {
 			ValidateAccess(mongo).
 			Build()).
 		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}/revisions",
+		resources.Filter(resources.ReadRevisions(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
 	r.HandleFunc("/{collection}/{resource}",
 		resources.Filter(resources.WriteContent(mongo, &ts)).
 			ValidateAccess(mongo).
