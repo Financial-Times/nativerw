@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -55,7 +56,7 @@ func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", contentTypeHeader)
 		w.Header().Add("Origin-System-Id", resource.OriginSystemID)
 		w.Header().Add(SchemaVersionHeader, resource.SchemaVersion)
-		w.Header().Add(ContentRevisionHeader, resource.ContentRevision)
+		w.Header().Add(ContentRevisionHeader, strconv.FormatInt(resource.ContentRevision, 10))
 
 		om, err := mapper.OutMapperForContentType(contentTypeHeader)
 		if err != nil {
