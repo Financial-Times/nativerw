@@ -3,18 +3,10 @@ package resources
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 
 	"github.com/Financial-Times/go-logger"
 )
-
-const (
-	txHeaderKey    = "X-Request-Id"
-	txHeaderLength = 20
-)
-
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func writeMessage(w http.ResponseWriter, msg string, status int) {
 	data, _ := json.Marshal(struct {
@@ -26,22 +18,6 @@ func writeMessage(w http.ResponseWriter, msg string, status int) {
 	if _, err := w.Write(data); err != nil {
 		logger.WithError(err).Error("could not build response JSON body")
 	}
-}
-
-func obtainTxID(req *http.Request) string {
-	txID := req.Header.Get(txHeaderKey)
-	if txID == "" {
-		return "tid_" + randSeq(txHeaderLength)
-	}
-	return txID
-}
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
 }
 
 func extractAttrFromHeader(r *http.Request, attrName, defValue, tid, resourceID string) string {

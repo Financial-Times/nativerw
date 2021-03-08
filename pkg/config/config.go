@@ -14,7 +14,7 @@ type Server struct {
 // Configuration data
 type Configuration struct {
 	Mongos      string   `json:"mongos"`
-	DbName      string   `json:"dbName"`
+	DBName      string   `json:"dbName"`
 	Server      Server   `json:"server"`
 	Collections []string `json:"collections"`
 }

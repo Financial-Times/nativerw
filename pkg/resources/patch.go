@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/Financial-Times/nativerw/pkg/mapper"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
-func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -23,9 +25,11 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tid := obtainTxID(r)
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
+		schemaVersion := r.Header.Get(SchemaVersionHeader)
+		contentRevision := ts.CreateTimestamp()
 
 		resource, found, err := connection.Read(collectionID, resourceID)
 		if err != nil {
@@ -77,7 +81,7 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 		patchResult := mergeContent(PatchC, originalC)
 		resource.Content = patchResult
 
-		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader)
+		wrappedContent := mapper.Wrap(patchResult, resourceID, contentTypeHeader, originSystemIDHeader, schemaVersion, contentRevision)
 		if errWrite := connection.Write(collectionID, wrappedContent); errWrite != nil {
 			msg := "Writing to mongoDB failed"
 			logger.
@@ -89,10 +93,13 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		logger.
-			WithMonitoringEvent("UpdatedToNative", tid, contentTypeHeader).
+		logger.WithMonitoringEvent("UpdatedToNative", tid, contentTypeHeader).
 			WithUUID(resourceID).
-			Info(fmt.Sprintf("Successfully updated, collection=%s, origin-system-id=%s", collectionID, originSystemIDHeader))
+			WithField("collection", collectionID).
+			WithField("origin-system-id", originSystemIDHeader).
+			WithField("schema-version", schemaVersion).
+			WithField("content-revision", contentRevision).
+			Info("Successfully updated")
 
 		om, err := mapper.OutMapperForContentType(contentTypeHeader)
 		if err != nil {
@@ -104,6 +111,8 @@ func PatchContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Add("Content-Type", contentTypeHeader)
 		w.Header().Add("Origin-System-Id", resource.OriginSystemID)
+		w.Header().Add(SchemaVersionHeader, schemaVersion)
+		w.Header().Add(ContentRevisionHeader, strconv.FormatInt(resource.ContentRevision, 10))
 		err = om(w, resource)
 		if err != nil {
 			msg := fmt.Sprintf("Unable to extract native content from resource with id %v. %v", resourceID, err.Error())
@@ -129,7 +138,6 @@ func mergeContent(patchC, originalC map[string]interface{}) map[string]interface
 	for key := range patchC {
 		_, oExists := originalC[key]
 		if oExists && compareConditions(patchC[key], originalC[key]) {
-
 			switch patchC[key].(type) {
 			case []interface{}:
 				res[key] = patchC[key]

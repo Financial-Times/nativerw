@@ -1,0 +1,23 @@
+version: '2'
+
+services:   
+  mongo:
+    image: mongo:3.4.17
+    environment:
+      - MONGODB_DATABASE=upp-store
+    ports:
+      - "27017:27017"
+
+  nativerw:
+    build:
+      context: .
+      args:
+        GITHUB_USERNAME: ${GITHUB_USERNAME}
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
+    environment:
+      MONGOS: "localhost:27017"
+      MONGO_NODE_COUNT: 1
+    ports:
+      - 8000:8080
+    depends_on:
+      - mongo

@@ -15,19 +15,23 @@ var (
 
 // Resource is the representation of a native resource
 type Resource struct {
-	UUID           string
-	Content        interface{}
-	ContentType    string
-	OriginSystemID string
+	UUID            string
+	Content         interface{}
+	ContentType     string
+	OriginSystemID  string
+	SchemaVersion   string
+	ContentRevision int64
 }
 
 // Wrap creates a new resource
-func Wrap(content interface{}, resourceID, contentType, originSystemID string) *Resource {
+func Wrap(content interface{}, resourceID, contentType, originSystemID, schemaVersion string, contentRevision int64) *Resource {
 	return &Resource{
-		UUID:           resourceID,
-		Content:        content,
-		ContentType:    contentType,
-		OriginSystemID: originSystemID,
+		UUID:            resourceID,
+		Content:         content,
+		ContentType:     contentType,
+		OriginSystemID:  originSystemID,
+		SchemaVersion:   schemaVersion,
+		ContentRevision: contentRevision,
 	}
 }
 
@@ -72,7 +76,6 @@ func InMapperForContentType(contentType string) (InMapper, error) {
 	}
 
 	return nil, ErrUnsupportedContentType
-
 }
 
 func jsonVariantInMapper(r io.ReadCloser) (interface{}, error) {

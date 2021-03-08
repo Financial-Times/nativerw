@@ -13,6 +13,7 @@ import (
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/Financial-Times/nativerw/pkg/mapper"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 // ReadContent reads the native data for the given id and collection
@@ -26,7 +27,7 @@ func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tid := obtainTxID(r)
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		vars := mux.Vars(r)
 		resourceID := vars["resource"]
 		collection := vars["collection"]
@@ -83,7 +84,7 @@ func ReadIDs(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
 		coll := vars["collection"]
-		tid := obtainTxID(r)
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
