@@ -63,6 +63,31 @@ func TestReadRevisions(t *testing.T) {
 	assert.Equal(t, `[1,2,3]`, strings.TrimSpace(w.Body.String()))
 }
 
+func TestReadSingleRevision(t *testing.T) {
+	mongo := new(MockDB)
+	connection := new(MockConnection)
+
+	mongo.On("Open").Return(connection, nil)
+	connection.On("ReadSingleRevision", "methode", "a-real-uuid", int64(1)).
+		Return(
+			&mapper.Resource{
+				ContentType: "application/json",
+				Content:     map[string]interface{}{"uuid": "fake-data"}},
+			nil)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/{collection}/{resource}/{revision}", ReadSingleRevision(mongo)).Methods("GET")
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/methode/a-real-uuid/1", http.NoBody)
+
+	router.ServeHTTP(w, req)
+	mongo.AssertExpectations(t)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	assert.Equal(t, `{"uuid":"fake-data"}`, strings.TrimSpace(w.Body.String()))
+}
+
 func TestReadContentWithCharsetDirective(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)

@@ -45,6 +45,7 @@ type Connection interface {
 	Delete(collection string, uuidString string) error
 	Write(collection string, resource *mapper.Resource) error
 	Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error)
+	ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error)
 	ReadIDs(ctx context.Context, collection string) (chan string, error)
 	ReadRevisions(collection string, uuidString string) (res []int64, err error)
 	Count(collection string, uuidString string, contentRevision int64) (count int, err error)
@@ -199,9 +200,40 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 		return res, false, err
 	}
 
+	res = ma.mapBsonToResource(bsonResource)
+	return res, true, nil
+}
+
+func (ma *mongoConnection) ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error) {
+	newSession := ma.session.Copy()
+	defer newSession.Close()
+
+	coll := newSession.DB(ma.dbName).C(collection)
+
+	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
+
+	var bsonResource map[string]interface{}
+
+	err = coll.Find(
+		bson.M{
+			uuidName:           bsonUUID,
+			"content-revision": revision}).
+		One(&bsonResource)
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	res = ma.mapBsonToResource(bsonResource)
+	return res, nil
+}
+
+func (ma *mongoConnection) mapBsonToResource(bsonResource map[string]interface{}) *mapper.Resource {
 	uuidData := bsonResource["uuid"].(bson.Binary).Data
 
-	res = &mapper.Resource{
+	res := &mapper.Resource{
 		UUID:        uuid.UUID(uuidData).String(),
 		Content:     bsonResource["content"],
 		ContentType: bsonResource["content-type"].(string),
@@ -222,7 +254,7 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 		res.ContentRevision = contentRevision.(int64)
 	}
 
-	return res, true, nil
+	return res
 }
 
 func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
