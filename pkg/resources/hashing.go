@@ -12,6 +12,7 @@ import (
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/nativerw/pkg/db"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
 // Hash hashes the given payload in SHA224 + Hex
@@ -42,7 +43,7 @@ func (f *Filters) CheckNativeHash(mongo db.DB) *Filters {
 		if strings.TrimSpace(nativeHash) != "" {
 			defer r.Body.Close()
 
-			tid := r.Header.Get(txHeaderKey)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			vars := mux.Vars(r)
 			matches, err := checkNativeHash(connection, nativeHash, vars["collection"], vars["resource"])
 
