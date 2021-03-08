@@ -8,10 +8,6 @@ import (
 	"github.com/Financial-Times/go-logger"
 )
 
-const (
-	txHeaderKey = "X-Request-Id"
-)
-
 func writeMessage(w http.ResponseWriter, msg string, status int) {
 	data, _ := json.Marshal(struct {
 		Message string `json:"message"`
