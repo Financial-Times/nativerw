@@ -120,8 +120,9 @@ func router(mongo db.DB) {
 			Build()).
 		Methods("PATCH")
 	r.HandleFunc("/{collection}/{resource}",
-		resources.Filter(resources.DeleteContent(mongo)).
+		resources.Filter(resources.WriteContent(mongo, &ts)).
 			ValidateAccess(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
 			Build()).
 		Methods("DELETE")
 
