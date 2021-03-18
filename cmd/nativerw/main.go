@@ -143,7 +143,10 @@ func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp) {
 	r.HandleFunc("/{collection}/{resource}",
 		resources.Filter(resources.WriteContent(mongo, &ts)).
 			ValidateAccess(mongo).
+<<<<<<< HEAD
 			ValidateHeader(resources.SchemaVersionHeader).
+=======
+>>>>>>> 4da66e5 (Filter requests by transaction-id)
 			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("DELETE")
