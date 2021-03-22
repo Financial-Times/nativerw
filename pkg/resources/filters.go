@@ -85,6 +85,26 @@ func (f *Filters) ValidateHeader(headerName string) *Filters {
 	return f
 }
 
+// SkipSpecificRequests will terminate the processing based on tid and return 200 OK
+func (f *Filters) SkipSpecificRequests(tidsPattern *regexp.Regexp) *Filters {
+	next := f.next
+	f.next = func(w http.ResponseWriter, r *http.Request) {
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
+		if tidsPattern.MatchString(tid) {
+			defer r.Body.Close()
+
+			logger.WithTransactionID(tid).Error("Skipping request due to tid prefix match")
+			w.WriteHeader(http.StatusOK)
+
+			return
+		}
+
+		next(w, r)
+	}
+
+	return f
+}
+
 // ValidateAccessForCollection validates whether the collection exists
 func (f *Filters) ValidateAccessForCollection(mongo db.DB) *Filters {
 	next := f.next
