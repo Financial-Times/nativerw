@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -44,6 +45,13 @@ func main() {
 		EnvVar: "CONFIG",
 	})
 
+	tidsToSkip := cliApp.String(cli.StringOpt{
+		Name:   "tids_to_skip",
+		Value:  "",
+		Desc:   "Regular expression defining requests to skip based on transaction id",
+		EnvVar: "TIDS_TO_SKIP",
+	})
+
 	logger.InitLogger(appName, "info")
 
 	cliApp.Action = func() {
@@ -60,8 +68,9 @@ func main() {
 		logger.Infof("Using configuration %# v", pretty.Formatter(conf))
 
 		logger.ServiceStartedEvent(conf.Server.Port)
+		tidsToSkipRegex := regexp.MustCompile(*tidsToSkip)
 		mongo := db.NewDBConnection(conf)
-		router(mongo)
+		router(mongo, tidsToSkipRegex)
 
 		go func() {
 			connection, mErr := mongo.Open()
@@ -89,7 +98,7 @@ func main() {
 	}
 }
 
-func router(mongo db.DB) {
+func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp) {
 	ts := resources.CurrentTimestampCreator{}
 
 	r := mux.NewRouter()
@@ -105,11 +114,22 @@ func router(mongo db.DB) {
 			ValidateAccess(mongo).
 			Build()).
 		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}/revisions",
+		resources.Filter(resources.ReadRevisions(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}/{revision}",
+		resources.Filter(resources.ReadSingleRevision(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
 	r.HandleFunc("/{collection}/{resource}",
 		resources.Filter(resources.WriteContent(mongo, &ts)).
 			ValidateAccess(mongo).
 			CheckNativeHash(mongo).
 			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("POST")
 	r.HandleFunc("/{collection}/{resource}",
@@ -117,12 +137,14 @@ func router(mongo db.DB) {
 			ValidateAccess(mongo).
 			CheckNativeHash(mongo).
 			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("PATCH")
 	r.HandleFunc("/{collection}/{resource}",
 		resources.Filter(resources.WriteContent(mongo, &ts)).
 			ValidateAccess(mongo).
 			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("DELETE")
 
