@@ -42,7 +42,7 @@ type DB interface {
 type Connection interface {
 	EnsureIndex()
 	GetSupportedCollections() map[string]bool
-	Delete(collection string, uuidString string) error
+	Delete(collection string, uuidString string, revision int64) error
 	Write(collection string, resource *mapper.Resource) error
 	Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error)
 	ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error)
@@ -147,14 +147,17 @@ func (ma *mongoConnection) EnsureIndex() {
 	}
 }
 
-func (ma *mongoConnection) Delete(collection string, uuidString string) error {
+func (ma *mongoConnection) Delete(collection string, uuidString string, revision int64) error {
 	newSession := ma.session.Copy()
 	defer newSession.Close()
 
 	coll := newSession.DB(ma.dbName).C(collection)
 	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
 
-	return coll.Remove(bson.D{bson.DocElem{Name: uuidName, Value: bsonUUID}})
+	return coll.Remove(bson.D{
+		bson.DocElem{Name: uuidName, Value: bsonUUID},
+		bson.DocElem{Name: contentRevisionName, Value: revision},
+	})
 }
 
 func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) error {

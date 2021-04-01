@@ -46,8 +46,8 @@ func (m *MockConnection) Close() {
 	m.Called()
 }
 
-func (m *MockConnection) Delete(collection string, uuidString string) error {
-	args := m.Called(collection, uuidString)
+func (m *MockConnection) Delete(collection string, uuidString string, revision int64) error {
+	args := m.Called(collection, uuidString, revision)
 	return args.Error(0)
 }
 

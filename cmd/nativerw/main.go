@@ -150,6 +150,12 @@ func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp) {
 			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("DELETE")
+	r.HandleFunc("/{collection}/purge/{resource}/{revision}",
+		resources.Filter(resources.PurgeContent(mongo)).
+			ValidateAccess(mongo).
+			SkipSpecificRequests(tidsToSkipRegex).
+			Build()).
+		Methods("DELETE")
 
 	r.HandleFunc("/__health", resources.Healthchecks(mongo))
 	r.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(resources.GoodToGo(mongo)))
