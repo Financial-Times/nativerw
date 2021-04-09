@@ -93,7 +93,7 @@ func (f *Filters) SkipSpecificRequests(tidsPattern *regexp.Regexp) *Filters {
 		if tidsPattern.MatchString(tid) {
 			defer r.Body.Close()
 
-			logger.WithTransactionID(tid).Error("Skipping request due to tid prefix match")
+			logger.WithTransactionID(tid).Info("Skipping request due to tid prefix match")
 			w.WriteHeader(http.StatusOK)
 
 			return

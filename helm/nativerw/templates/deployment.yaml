@@ -42,7 +42,7 @@ spec:
               name: global-config
               key: mongo.addresses
         - name: TIDS_TO_SKIP
-          value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|republish_tid_[0-9]+)"      
+          value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
         ports:
         - containerPort: 8080
         livenessProbe:
