@@ -128,6 +128,8 @@ func ReadSingleRevision(mongo db.DB) func(w http.ResponseWriter, r *http.Request
 		contentTypeHeader := resource.ContentType
 		w.Header().Add("Content-Type", contentTypeHeader)
 		w.Header().Add("Origin-System-Id", resource.OriginSystemID)
+		w.Header().Add(SchemaVersionHeader, resource.SchemaVersion)
+		w.Header().Add(ContentRevisionHeader, strconv.FormatInt(resource.ContentRevision, 10))
 
 		om, err := mapper.OutMapperForContentType(contentTypeHeader)
 		if err != nil {
