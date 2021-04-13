@@ -53,7 +53,8 @@ func TestHealthchecksFail(t *testing.T) {
 
 	healthResult := fthealth.HealthResult{}
 	dec := json.NewDecoder(w.Body)
-	dec.Decode(&healthResult)
+	err := dec.Decode(&healthResult)
+	assert.NoError(t, err)
 
 	assert.Equal(t, 1.0, healthResult.SchemaVersion)
 	assert.Equal(t, "nativerw", healthResult.Name)
@@ -93,10 +94,14 @@ func TestGTG(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
 
 	router.ServeHTTP(w, req)
+
+	r := w.Result()
+	defer r.Body.Close()
+
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "text/plain; charset=US-ASCII", w.Result().Header.Get("Content-Type"))
-	assert.Equal(t, "no-cache", w.Result().Header.Get("Cache-Control"))
+	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
+	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }
 
 func TestGTGFailsOnRead(t *testing.T) {
@@ -114,10 +119,14 @@ func TestGTGFailsOnRead(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
 
 	router.ServeHTTP(w, req)
+
+	r := w.Result()
+	defer r.Body.Close()
+
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	assert.Equal(t, "text/plain; charset=US-ASCII", w.Result().Header.Get("Content-Type"))
-	assert.Equal(t, "no-cache", w.Result().Header.Get("Cache-Control"))
+	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
+	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }
 
 func TestGTGFailsOnWrite(t *testing.T) {
@@ -135,10 +144,14 @@ func TestGTGFailsOnWrite(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
 
 	router.ServeHTTP(w, req)
+
+	r := w.Result()
+	defer r.Body.Close()
+
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	assert.Equal(t, "text/plain; charset=US-ASCII", w.Result().Header.Get("Content-Type"))
-	assert.Equal(t, "no-cache", w.Result().Header.Get("Cache-Control"))
+	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
+	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }
 
 func TestFailedMongoDuringHealthcheck(t *testing.T) {
@@ -167,8 +180,12 @@ func TestFailedMongoDuringGTG(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
 
 	router.ServeHTTP(w, req)
+
+	r := w.Result()
+	defer r.Body.Close()
+
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	assert.Equal(t, "text/plain; charset=US-ASCII", w.Result().Header.Get("Content-Type"))
-	assert.Equal(t, "no-cache", w.Result().Header.Get("Cache-Control"))
+	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
+	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }

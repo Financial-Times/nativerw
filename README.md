@@ -24,14 +24,19 @@ The following params can be injected in the nativerw app on startup through envi
  - `MONGOS` This env var is mandatory. Mongo addresses to connect to in format: host1:port1[,host2:port2,...] the app will exit (with `exit code 1`) it is not valid. The `MONGOS` value is considered to be valid if the number of provided URLs matches the provided `MONGO_NODE_COUNT` and each MongoDb URL has host:port.
  - `MONGO_NODE_COUNT` The number of MongoDB instances. Default value is 3.
  - `CONFIG` Config file in json format. If not set, the default `config.json` will be used.
+ - `TIDS_TO_SKIP` Regular expression defining transaction-id's to be skipped from storing in nativerw
+ - `DISABLE-PURGE` Disables the `purge` endpoint
 
 ## API
 
 The nativerw supports the following endpoints:
 
-* GET `/{collection}/{uuid}` retrieves the native document, and returns it in either json or binary (depending on how it is saved).
-* PUT `/{collection}/{uuid}` upserts a new native document for the given uuid.
+* GET `/{collection}/{uuid}` retrieves the last revision of native document, and returns it in either json or binary (depending on how it is saved).
+* GET `/{collection}/{uuid}/{revision}` retrieves a specific revision of a document 
+* POST `/{collection}/{uuid}` upserts a new native document for the given uuid.
 * PATCH `/{collection}/{uuid}` updates specific fields for the given uuid.
+* DELETE `/{collection}/{uuid}` marks a document as deleted in the store
+* DELETE `/{collection}/purge/{uuid}/{revision}` physically deleres a document revision from the store
 * GET `/{collection}/__ids` returns all uuids for the given collection on a **best efforts basis**. If the collection is very large, the endpoint is likely to time out (timeout duration is hardcoded to 10s) before all uuids have been returned. This will be indistinguishable from a request which sends back the complete set of uuids, however, if there are less than ~10,000 uuids returned, you can be fairly confident you have the entire set.
 * GET `/__gtg` the good to go endpoint.
 * GET `/__health` the health endpoint.

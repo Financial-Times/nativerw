@@ -19,9 +19,11 @@ func init() {
 
 func generateResource() *mapper.Resource {
 	return &mapper.Resource{
-		UUID:        uuid.NewUUID().String(),
-		Content:     map[string]interface{}{"randomness": uuid.NewUUID().String()},
-		ContentType: "application/json",
+		UUID:            uuid.NewUUID().String(),
+		Content:         map[string]interface{}{"randomness": uuid.NewUUID().String()},
+		ContentType:     "application/json",
+		SchemaVersion:   "14",
+		ContentRevision: int64(123),
 	}
 }
 
@@ -41,8 +43,10 @@ func TestReadWriteDelete(t *testing.T) {
 	assert.Equal(t, expectedResource.ContentType, res.ContentType)
 	assert.Equal(t, expectedResource.UUID, res.UUID)
 	assert.Equal(t, expectedResource.Content, res.Content)
+	assert.Equal(t, expectedResource.SchemaVersion, res.SchemaVersion)
+	assert.Equal(t, expectedResource.ContentRevision, res.ContentRevision)
 
-	err = connection.Delete("methode", expectedResource.UUID)
+	err = connection.Delete("methode", expectedResource.UUID, expectedResource.ContentRevision)
 	assert.NoError(t, err)
 
 	_, found, err = connection.Read("methode", expectedResource.UUID)
@@ -76,10 +80,10 @@ func TestEnsureIndexes(t *testing.T) {
 	assert.NoError(t, err)
 	count := 0
 	for _, index := range indexes {
-		if index.Name == "uuid-index" {
+		if index.Name == "uuid-revision-index" {
 			assert.True(t, index.Background)
 			assert.True(t, index.Unique)
-			assert.Equal(t, []string{"uuid"}, index.Key)
+			assert.Equal(t, []string{"uuid", "content-revision"}, index.Key)
 			count = count + 1
 		}
 	}
@@ -147,7 +151,8 @@ func TestOpenWillReturnConnectionIfAlreadyInitialised(t *testing.T) {
 		return &mongoConnection{dbName: "faked"}, nil
 	})
 
-	mongo.connection.Block()
+	_, err := mongo.connection.Block()
+	assert.NoError(t, err)
 
 	connection, err := mongo.Open()
 	assert.NoError(t, err)
@@ -161,7 +166,7 @@ func TestOpenFailsIfInitialisationFailed(t *testing.T) {
 		return nil, errors.New("i failed")
 	})
 
-	mongo.connection.Block()
+	_, _ = mongo.connection.Block()
 
 	connection, err := mongo.Open()
 	assert.Error(t, err)

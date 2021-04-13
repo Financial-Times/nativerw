@@ -3,10 +3,11 @@ package main
 import (
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
 
 	"github.com/Financial-Times/go-logger"
@@ -44,6 +45,20 @@ func main() {
 		EnvVar: "CONFIG",
 	})
 
+	tidsToSkip := cliApp.String(cli.StringOpt{
+		Name:   "tids_to_skip",
+		Value:  "",
+		Desc:   "Regular expression defining requests to skip based on transaction id",
+		EnvVar: "TIDS_TO_SKIP",
+	})
+
+	disablePurge := cliApp.Bool(cli.BoolOpt{
+		Name:   "disable_purge",
+		Value:  true,
+		Desc:   "Disable the purge endpoint (true/false)",
+		EnvVar: "DISABLE_PURGE",
+	})
+
 	logger.InitLogger(appName, "info")
 
 	cliApp.Action = func() {
@@ -60,8 +75,9 @@ func main() {
 		logger.Infof("Using configuration %# v", pretty.Formatter(conf))
 
 		logger.ServiceStartedEvent(conf.Server.Port)
+		tidsToSkipRegex := regexp.MustCompile(*tidsToSkip)
 		mongo := db.NewDBConnection(conf)
-		router(mongo)
+		router(mongo, tidsToSkipRegex, *disablePurge)
 
 		go func() {
 			connection, mErr := mongo.Open()
@@ -89,15 +105,64 @@ func main() {
 	}
 }
 
-func router(mongo db.DB) {
+func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp, disablePurge bool) {
+	ts := resources.CurrentTimestampCreator{}
+
 	r := mux.NewRouter()
 
-	r.HandleFunc("/{collection}/__ids", resources.Filter(resources.ReadIDs(mongo)).ValidateAccessForCollection(mongo).Build()).Methods("GET")
+	r.HandleFunc("/{collection}/__ids",
+		resources.Filter(resources.ReadIDs(mongo)).
+			ValidateAccessForCollection(mongo).
+			Build()).
+		Methods("GET")
 
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.ReadContent(mongo)).ValidateAccess(mongo).Build()).Methods("GET")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.WriteContent(mongo)).ValidateAccess(mongo).CheckNativeHash(mongo).Build()).Methods("PUT")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.PatchContent(mongo)).ValidateAccess(mongo).CheckNativeHash(mongo).Build()).Methods("PATCH")
-	r.HandleFunc("/{collection}/{resource}", resources.Filter(resources.DeleteContent(mongo)).ValidateAccess(mongo).Build()).Methods("DELETE")
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.ReadContent(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}/revisions",
+		resources.Filter(resources.ReadRevisions(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}/{revision}",
+		resources.Filter(resources.ReadSingleRevision(mongo)).
+			ValidateAccess(mongo).
+			Build()).
+		Methods("GET")
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.WriteContent(mongo, &ts)).
+			ValidateAccess(mongo).
+			CheckNativeHash(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
+			Build()).
+		Methods("POST")
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.PatchContent(mongo, &ts)).
+			ValidateAccess(mongo).
+			CheckNativeHash(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
+			Build()).
+		Methods("PATCH")
+	r.HandleFunc("/{collection}/{resource}",
+		resources.Filter(resources.WriteContent(mongo, &ts)).
+			ValidateAccess(mongo).
+			ValidateHeader(resources.SchemaVersionHeader).
+			SkipSpecificRequests(tidsToSkipRegex).
+			Build()).
+		Methods("DELETE")
+
+	if !disablePurge {
+		r.HandleFunc("/{collection}/purge/{resource}/{revision}",
+			resources.Filter(resources.PurgeContent(mongo)).
+				ValidateAccess(mongo).
+				SkipSpecificRequests(tidsToSkipRegex).
+				Build()).
+			Methods("DELETE")
+	}
 
 	r.HandleFunc("/__health", resources.Healthchecks(mongo))
 	r.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(resources.GoodToGo(mongo)))

@@ -7,9 +7,15 @@ import (
 	"regexp"
 
 	"github.com/Financial-Times/go-logger"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 
 	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/gorilla/mux"
+)
+
+const (
+	SchemaVersionHeader   = "X-Schema-Version"
+	ContentRevisionHeader = "X-Content-Revision"
 )
 
 var uuidRegexp = regexp.MustCompile("^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}$")
@@ -45,7 +51,7 @@ func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
 		if err := validateAccess(connection, collectionID, resourceID); err != nil {
 			defer r.Body.Close()
 
-			tid := obtainTxID(r)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			msg := fmt.Sprintf("Invalid collectionId (%v) or resourceId (%v)", collectionID, resourceID)
 			logger.WithTransactionID(tid).WithError(err).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)
@@ -54,6 +60,48 @@ func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
 
 		next(w, r)
 	}
+	return f
+}
+
+// ValidateHeader ensures that a specific header is provided and if not fails the request
+func (f *Filters) ValidateHeader(headerName string) *Filters {
+	next := f.next
+	f.next = func(w http.ResponseWriter, r *http.Request) {
+		sv := r.Header.Get(headerName)
+		if sv == "" {
+			defer r.Body.Close()
+
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
+			msg := fmt.Sprintf("request is missing the %v header", headerName)
+			logger.WithTransactionID(tid).Error(msg)
+			http.Error(w, msg, http.StatusBadRequest)
+
+			return
+		}
+
+		next(w, r)
+	}
+
+	return f
+}
+
+// SkipSpecificRequests will terminate the processing based on tid and return 200 OK
+func (f *Filters) SkipSpecificRequests(tidsPattern *regexp.Regexp) *Filters {
+	next := f.next
+	f.next = func(w http.ResponseWriter, r *http.Request) {
+		tid := transactionidutils.GetTransactionIDFromRequest(r)
+		if tidsPattern.MatchString(tid) {
+			defer r.Body.Close()
+
+			logger.WithTransactionID(tid).Info("Skipping request due to tid prefix match")
+			w.WriteHeader(http.StatusOK)
+
+			return
+		}
+
+		next(w, r)
+	}
+
 	return f
 }
 
@@ -72,7 +120,7 @@ func (f *Filters) ValidateAccessForCollection(mongo db.DB) *Filters {
 
 		if err := validateAccessForCollection(connection, collection); err != nil {
 			defer r.Body.Close()
-			tid := obtainTxID(r)
+			tid := transactionidutils.GetTransactionIDFromRequest(r)
 			msg := fmt.Sprintf("Invalid collectionId (%v)", collection)
 			logger.WithTransactionID(tid).WithError(err).Error(msg)
 			http.Error(w, msg, http.StatusBadRequest)

@@ -46,8 +46,8 @@ func (m *MockConnection) Close() {
 	m.Called()
 }
 
-func (m *MockConnection) Delete(collection string, uuidString string) error {
-	args := m.Called(collection, uuidString)
+func (m *MockConnection) Delete(collection string, uuidString string, revision int64) error {
+	args := m.Called(collection, uuidString, revision)
 	return args.Error(0)
 }
 
@@ -65,4 +65,19 @@ func (m *MockConnection) Write(collection string, resource *mapper.Resource) err
 func (m *MockConnection) Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error) {
 	args := m.Called(collection, uuidString)
 	return args.Get(0).(*mapper.Resource), args.Bool(1), args.Error(2)
+}
+
+func (m *MockConnection) ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error) {
+	args := m.Called(collection, uuidString, revision)
+	return args.Get(0).(*mapper.Resource), args.Error(1)
+}
+
+func (m *MockConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
+	args := m.Called(collection, uuidString)
+	return args.Get(0).([]int64), args.Error(1)
+}
+
+func (m *MockConnection) Count(collection string, uuidString string, contentRevision int64) (count int, err error) {
+	args := m.Called(collection, uuidString, contentRevision)
+	return args.Int(0), args.Error(1)
 }
