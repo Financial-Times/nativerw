@@ -43,6 +43,8 @@ spec:
               key: mongo.addresses
         - name: TIDS_TO_SKIP
           value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
+        - name: DISABLE_PURGE
+          value: "{{ .Values.service.disablePurge }}"
         ports:
         - containerPort: 8080
         livenessProbe:

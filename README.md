@@ -25,6 +25,7 @@ The following params can be injected in the nativerw app on startup through envi
  - `MONGO_NODE_COUNT` The number of MongoDB instances. Default value is 3.
  - `CONFIG` Config file in json format. If not set, the default `config.json` will be used.
  - `TIDS_TO_SKIP` Regular expression defining transaction-id's to be skipped from storing in nativerw
+ - `DISABLE-PURGE` Disables the `purge` endpoint
 
 ## API
 

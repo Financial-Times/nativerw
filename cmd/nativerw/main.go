@@ -52,6 +52,13 @@ func main() {
 		EnvVar: "TIDS_TO_SKIP",
 	})
 
+	disablePurge := cliApp.Bool(cli.BoolOpt{
+		Name:   "disable_purge",
+		Value:  true,
+		Desc:   "Disable the purge endpoint (true/false)",
+		EnvVar: "DISABLE_PURGE",
+	})
+
 	logger.InitLogger(appName, "info")
 
 	cliApp.Action = func() {
@@ -70,7 +77,7 @@ func main() {
 		logger.ServiceStartedEvent(conf.Server.Port)
 		tidsToSkipRegex := regexp.MustCompile(*tidsToSkip)
 		mongo := db.NewDBConnection(conf)
-		router(mongo, tidsToSkipRegex)
+		router(mongo, tidsToSkipRegex, *disablePurge)
 
 		go func() {
 			connection, mErr := mongo.Open()
@@ -98,7 +105,7 @@ func main() {
 	}
 }
 
-func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp) {
+func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp, disablePurge bool) {
 	ts := resources.CurrentTimestampCreator{}
 
 	r := mux.NewRouter()
@@ -147,12 +154,15 @@ func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp) {
 			SkipSpecificRequests(tidsToSkipRegex).
 			Build()).
 		Methods("DELETE")
-	r.HandleFunc("/{collection}/purge/{resource}/{revision}",
-		resources.Filter(resources.PurgeContent(mongo)).
-			ValidateAccess(mongo).
-			SkipSpecificRequests(tidsToSkipRegex).
-			Build()).
-		Methods("DELETE")
+
+	if !disablePurge {
+		r.HandleFunc("/{collection}/purge/{resource}/{revision}",
+			resources.Filter(resources.PurgeContent(mongo)).
+				ValidateAccess(mongo).
+				SkipSpecificRequests(tidsToSkipRegex).
+				Build()).
+			Methods("DELETE")
+	}
 
 	r.HandleFunc("/__health", resources.Healthchecks(mongo))
 	r.HandleFunc(status.GTGPath, status.NewGoodToGoHandler(resources.GoodToGo(mongo)))
