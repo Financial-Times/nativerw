@@ -261,8 +261,6 @@ func TestDefaultContentType(t *testing.T) {
 	path := fmt.Sprintf("/%s/%s", collection, uuid)
 	req, _ := http.NewRequest(httpMethod, path, strings.NewReader(`{"body": "updated-data"}`))
 
-	//req.Header.Add("Content-Type", contentType)
-
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
