@@ -50,7 +50,10 @@ func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 			return
 		}
 
-		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
+		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "", tid, resourceID)
+		if contentTypeHeader == ""{
+			contentTypeHeader = resource.ContentType
+		}
 		inMapper, err := mapper.InMapperForContentType(contentTypeHeader)
 		if err != nil {
 			msg := "Unsupported content-type"

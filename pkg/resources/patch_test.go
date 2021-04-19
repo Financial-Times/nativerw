@@ -238,6 +238,37 @@ func TestFailedMongoOnWrite(t *testing.T) {
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }
 
+func TestDefaultContentType(t *testing.T) {
+	mongo := new(MockDB)
+	connection := new(MockConnection)
+	uuid := "a-real-uuid"
+	collection := "wordpress"
+	updatedContent := map[string]interface{}{"body": "updated-data"}
+	contentType := "application/json"
+	httpMethod := "PATCH"
+	var contentRevision int64 = 1436773875771421417
+
+	mongo.On("Open").Return(connection, nil)
+	connection.On("Read", collection, uuid).Return(&mapper.Resource{ContentType: contentType, Content: map[string]interface{}{}, ContentRevision: contentRevision}, true, nil)
+	connection.On("Write", collection, &mapper.Resource{UUID: uuid, Content: updatedContent, ContentType: contentType, ContentRevision: contentRevision}).Return(nil)
+
+	ts := fixedTimestampCreator{}
+
+	router := mux.NewRouter()
+	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods(httpMethod)
+
+	w := httptest.NewRecorder()
+	path := fmt.Sprintf("/%s/%s", collection, uuid)
+	req, _ := http.NewRequest(httpMethod, path, strings.NewReader(`{"body": "updated-data"}`))
+
+	//req.Header.Add("Content-Type", contentType)
+
+	router.ServeHTTP(w, req)
+	mongo.AssertExpectations(t)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, contentType, w.Header().Get("Content-Type"))
+}
+
 func TestPatchContentReflection(t *testing.T) {
 	tests := []struct {
 		name           string
