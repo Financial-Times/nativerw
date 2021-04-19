@@ -51,7 +51,7 @@ func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 		}
 
 		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "", tid, resourceID)
-		if contentTypeHeader == ""{
+		if contentTypeHeader == "" {
 			contentTypeHeader = resource.ContentType
 		}
 		inMapper, err := mapper.InMapperForContentType(contentTypeHeader)
