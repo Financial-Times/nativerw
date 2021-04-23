@@ -31,12 +31,13 @@ The following params can be injected in the nativerw app on startup through envi
 
 The nativerw supports the following endpoints:
 
-* GET `/{collection}/{uuid}` retrieves the last revision of native document, and returns it in either json or binary (depending on how it is saved).
-* GET `/{collection}/{uuid}/{revision}` retrieves a specific revision of a document 
-* POST `/{collection}/{uuid}` upserts a new native document for the given uuid.
-* PATCH `/{collection}/{uuid}` updates specific fields for the given uuid.
-* DELETE `/{collection}/{uuid}` marks a document as deleted in the store
-* DELETE `/{collection}/purge/{uuid}/{revision}` physically deleres a document revision from the store
+* GET `/{collection}/{uuid}` retrieves the latest revision of native document, and returns it in either json or binary (depending on how it is saved).
+* GET `/{collection}/{uuid}/revisions` retrieves a list with all the revisions for a specific document
+* GET `/{collection}/{uuid}/{revision}` retrieves a specific revision of a document
+* POST `/{collection}/{uuid}` inserts a new native document for the given uuid/revision. If the specified revision already exists then no changes are written in the database and 200 OK is returned. Since the MongoDB is historized based on the `revision` field, the updates are treated as inserts in the database.
+* PATCH `/{collection}/{uuid}` updates specific fields for the given uuid/revision. If no revision is provided a new one is generated based on the current date/time
+* DELETE `/{collection}/{uuid}` marks a document as deleted in the store by inserting new revision in the MongoDB
+* DELETE `/{collection}/purge/{uuid}/{revision}` physically deletes a document revision from the store
 * GET `/{collection}/__ids` returns all uuids for the given collection on a **best efforts basis**. If the collection is very large, the endpoint is likely to time out (timeout duration is hardcoded to 10s) before all uuids have been returned. This will be indistinguishable from a request which sends back the complete set of uuids, however, if there are less than ~10,000 uuids returned, you can be fairly confident you have the entire set.
 * GET `/__gtg` the good to go endpoint.
 * GET `/__health` the health endpoint.
