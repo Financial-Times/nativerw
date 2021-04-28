@@ -56,7 +56,10 @@ func jsonVariantOutMapper(w io.Writer, resource *Resource) error {
 }
 
 func octetStreamOutMapper(w io.Writer, resource *Resource) error {
-	data := resource.Content.([]byte)
+	data, ok := resource.Content.([]byte)
+	if !ok {
+		return errors.New("error while casting to byte array")
+	}
 	_, err := io.Copy(w, bytes.NewReader(data))
 	return err
 }

@@ -27,6 +27,20 @@ The following params can be injected in the nativerw app on startup through envi
  - `TIDS_TO_SKIP` Regular expression defining transaction-id's to be skipped from storing in nativerw
  - `DISABLE-PURGE` Disables the `purge` endpoint
 
+To run locally against `dev` native store:
+1. Port forward the `main` node
+   
+   `kubectx eks-publish-dev-eu`
+   
+    `kubectl port-forward mongodb-<id> 27017:27017`
+
+2. Run with the required ENV vars
+    
+    bash
+   
+    `
+    MONGOS=localhost:27017 MONGO_NODE_COUNT=1 TIDS_TO_SKIP=none go run cmd/nativerw/main.go
+    `
 ## API
 
 The nativerw supports the following endpoints:
