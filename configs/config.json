@@ -10,6 +10,7 @@
       "v1-metadata",
       "video",
       "video-metadata",
-      "pac-metadata"
+      "pac-metadata",
+      "pages"
    ]
 }
