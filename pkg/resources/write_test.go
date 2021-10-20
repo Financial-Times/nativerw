@@ -26,14 +26,14 @@ func TestWriteContent(t *testing.T) {
 
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Write",
-		"methode",
+		"universal-content",
 		&mapper.Resource{
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
 			ContentType:     "application/json",
 			ContentRevision: 1436773875771421417}).
 		Return(nil)
-	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
+	connection.On("Count", "universal-content", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -42,7 +42,7 @@ func TestWriteContent(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json")
 
@@ -56,7 +56,7 @@ func TestWriteContentWhenContentRevisionExists(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
+	connection.On("Count", "universal-content", "a-real-uuid", int64(1436773875771421417)).
 		Return(1, nil)
 
 	ts := fixedTimestampCreator{}
@@ -65,7 +65,7 @@ func TestWriteContentWhenContentRevisionExists(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json")
 
@@ -81,14 +81,14 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 	mongo.On("Open").Return(connection, nil)
 
 	connection.On("Write",
-		"methode",
+		"universal-content",
 		&mapper.Resource{
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
 			ContentType:     "application/json; charset=utf-8",
 			ContentRevision: 1436773875771421417}).
 		Return(nil)
-	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
+	connection.On("Count", "universal-content", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -97,7 +97,7 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 
@@ -112,7 +112,7 @@ func TestWriteFailed(t *testing.T) {
 
 	mongo.On("Open").Return(connection, nil)
 	connection.On("Write",
-		"methode",
+		"universal-content",
 		&mapper.Resource{
 			UUID:            "a-real-uuid",
 			Content:         map[string]interface{}{},
@@ -120,7 +120,7 @@ func TestWriteFailed(t *testing.T) {
 			ContentRevision: 1436773875771421417}).
 		Return(errors.New("i failed"))
 
-	connection.On("Count", "methode", "a-real-uuid", int64(1436773875771421417)).
+	connection.On("Count", "universal-content", "a-real-uuid", int64(1436773875771421417)).
 		Return(0, nil)
 
 	ts := fixedTimestampCreator{}
@@ -129,7 +129,7 @@ func TestWriteFailed(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/json")
 
@@ -150,7 +150,7 @@ func TestDefaultsToBinaryMapping(t *testing.T) {
 	assert.NoError(t, err)
 
 	connection.On("Write",
-		"methode",
+		"universal-content",
 		&mapper.Resource{
 			UUID:            "a-real-uuid",
 			Content:         content,
@@ -164,7 +164,7 @@ func TestDefaultsToBinaryMapping(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 
 	req.Header.Add("Content-Type", "application/a-fake-type")
 
@@ -185,7 +185,7 @@ func TestFailedJSON(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/methode/a-real-uuid", strings.NewReader(`i am not json`))
+	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`i am not json`))
 
 	req.Header.Add("Content-Type", "application/json")
 

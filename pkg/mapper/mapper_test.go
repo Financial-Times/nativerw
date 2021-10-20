@@ -37,7 +37,7 @@ func TestWrap(t *testing.T) {
 			},
 			"9694733e-163a-4393-801f-000ab7de5041",
 			"application/json",
-			"methode",
+			"universal-content",
 			"tid_blahblahblah",
 			"3",
 			1436773875771421417,
@@ -49,7 +49,7 @@ func TestWrap(t *testing.T) {
 					"brands": []string{"Lex", "Markets"},
 				},
 				ContentType:     "application/json",
-				OriginSystemID:  "methode",
+				OriginSystemID:  "universal-content",
 				SchemaVersion:   "3",
 				ContentRevision: 1436773875771421417,
 			},
@@ -73,7 +73,7 @@ func TestJsonMappers(t *testing.T) {
 			"brands": []interface{}{"Lex", "Markets"},
 		},
 		ContentType:    "application/json",
-		OriginSystemID: "methode",
+		OriginSystemID: "universal-content",
 	}
 
 	mockBody := &MockBody{Body: strings.NewReader(`{"body":"This is a body.","brands":["Lex","Markets"],"title":"Title"}`)}

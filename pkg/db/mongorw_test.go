@@ -34,10 +34,10 @@ func TestReadWriteDelete(t *testing.T) {
 	assert.NoError(t, err)
 	defer connection.Close()
 	expectedResource := generateResource()
-	err = connection.Write("methode", expectedResource)
+	err = connection.Write("universal-content", expectedResource)
 	assert.NoError(t, err)
 
-	res, found, err := connection.Read("methode", expectedResource.UUID)
+	res, found, err := connection.Read("universal-content", expectedResource.UUID)
 	assert.True(t, found)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResource.ContentType, res.ContentType)
@@ -46,10 +46,10 @@ func TestReadWriteDelete(t *testing.T) {
 	assert.Equal(t, expectedResource.SchemaVersion, res.SchemaVersion)
 	assert.Equal(t, expectedResource.ContentRevision, res.ContentRevision)
 
-	err = connection.Delete("methode", expectedResource.UUID, expectedResource.ContentRevision)
+	err = connection.Delete("universal-content", expectedResource.UUID, expectedResource.ContentRevision)
 	assert.NoError(t, err)
 
-	_, found, err = connection.Read("methode", expectedResource.UUID)
+	_, found, err = connection.Read("universal-content", expectedResource.UUID)
 
 	assert.False(t, found)
 	assert.NoError(t, err)
@@ -62,7 +62,7 @@ func TestGetSupportedCollections(t *testing.T) {
 
 	defer connection.Close()
 
-	expected := map[string]bool{"methode": true} // this is set in mongo_test.go
+	expected := map[string]bool{"universal-content": true} // this is set in mongo_test.go
 	actual := connection.GetSupportedCollections()
 	assert.Equal(t, expected, actual)
 }
@@ -75,7 +75,7 @@ func TestEnsureIndexes(t *testing.T) {
 	defer connection.Close()
 
 	connection.EnsureIndex()
-	indexes, err := connection.(*mongoConnection).session.DB("native-store").C("methode").Indexes()
+	indexes, err := connection.(*mongoConnection).session.DB("native-store").C("universal-content").Indexes()
 
 	assert.NoError(t, err)
 	count := 0
@@ -183,13 +183,13 @@ func TestReadIDs(t *testing.T) {
 
 	expectedResource := generateResource()
 
-	err = connection.Write("methode", expectedResource)
+	err = connection.Write("universal-content", expectedResource)
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ids, err := connection.ReadIDs(ctx, "methode")
+	ids, err := connection.ReadIDs(ctx, "universal-content")
 
 	assert.NoError(t, err)
 	found := false
@@ -214,14 +214,14 @@ func TestReadMoreThanOneBatch(t *testing.T) {
 	for range make([]struct{}, 64) {
 		expectedResource := generateResource()
 
-		err = connection.Write("methode", expectedResource)
+		err = connection.Write("universal-content", expectedResource)
 		assert.NoError(t, err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ids, err := connection.ReadIDs(ctx, "methode")
+	ids, err := connection.ReadIDs(ctx, "universal-content")
 
 	assert.NoError(t, err)
 	count := 0
@@ -244,14 +244,14 @@ func TestCancelReadIDs(t *testing.T) {
 	for range make([]struct{}, 64) {
 		expectedResource := generateResource()
 
-		err = connection.Write("methode", expectedResource)
+		err = connection.Write("universal-content", expectedResource)
 		assert.NoError(t, err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel() // just in case
 
-	ids, err := connection.ReadIDs(ctx, "methode")
+	ids, err := connection.ReadIDs(ctx, "universal-content")
 
 	assert.NoError(t, err)
 
