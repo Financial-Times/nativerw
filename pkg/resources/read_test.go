@@ -19,7 +19,7 @@ func TestReadContent(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").
+	connection.On("Read", "universal-content", "a-real-uuid").
 		Return(
 			&mapper.Resource{
 				ContentType: "application/json",
@@ -31,7 +31,7 @@ func TestReadContent(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -68,7 +68,7 @@ func TestReadSingleRevision(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("ReadSingleRevision", "methode", "a-real-uuid", int64(1)).
+	connection.On("ReadSingleRevision", "universal-content", "a-real-uuid", int64(1)).
 		Return(
 			&mapper.Resource{
 				ContentType: "application/json",
@@ -79,7 +79,7 @@ func TestReadSingleRevision(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}/{revision}", ReadSingleRevision(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid/1", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid/1", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -93,13 +93,13 @@ func TestReadContentWithCharsetDirective(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/json; charset=utf-8", Content: map[string]interface{}{"uuid": "fake-data"}}, true, nil)
+	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/json; charset=utf-8", Content: map[string]interface{}{"uuid": "fake-data"}}, true, nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -113,13 +113,13 @@ func TestReadFailed(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{}, false, errors.New("i failed"))
+	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{}, false, errors.New("i failed"))
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -131,13 +131,13 @@ func TestIDNotFound(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{}, false, nil)
+	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{}, false, nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -149,13 +149,13 @@ func TestNoMapperImplemented(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/vnd.fake-mime-type"}, true, nil)
+	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/vnd.fake-mime-type"}, true, nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -167,13 +167,13 @@ func TestUnableToMap(t *testing.T) {
 	connection := new(MockConnection)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("Read", "methode", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/json", Content: func() {}}, true, nil)
+	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{ContentType: "application/json", Content: func() {}}, true, nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -189,7 +189,7 @@ func TestFailedMongoOnRead(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", ReadContent(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/a-real-uuid", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/a-real-uuid", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -203,13 +203,13 @@ func TestReadIDs(t *testing.T) {
 	ids := make(chan string, 1)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("ReadIDs", mock.AnythingOfType("*context.timerCtx"), "methode").Return(ids, nil)
+	connection.On("ReadIDs", mock.AnythingOfType("*context.timerCtx"), "universal-content").Return(ids, nil)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/__ids", ReadIDs(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/__ids", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/__ids", http.NoBody)
 
 	go func() {
 		ids <- "hi"
@@ -233,7 +233,7 @@ func TestReadIDsMongoOpenFails(t *testing.T) {
 	router.HandleFunc("/{collection}/__ids", ReadIDs(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/__ids", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/__ids", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -248,13 +248,13 @@ func TestReadIDsMongoCallFails(t *testing.T) {
 	ids := make(chan string, 1)
 
 	mongo.On("Open").Return(connection, nil)
-	connection.On("ReadIDs", mock.AnythingOfType("*context.timerCtx"), "methode").Return(ids, errors.New(`oh no`))
+	connection.On("ReadIDs", mock.AnythingOfType("*context.timerCtx"), "universal-content").Return(ids, errors.New(`oh no`))
 
 	router := mux.NewRouter()
 	router.HandleFunc("/{collection}/__ids", ReadIDs(mongo)).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/__ids", http.NoBody)
+	req, _ := http.NewRequest("GET", "/universal-content/__ids", http.NoBody)
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)

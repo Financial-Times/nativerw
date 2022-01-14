@@ -21,7 +21,7 @@ func TestPatchContent(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	updatedContent := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
@@ -51,7 +51,7 @@ func TestShouldNotUpdatePatchContentEmptyRequestBody(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	existingContent := map[string]interface{}{"body": "data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
@@ -81,7 +81,7 @@ func TestPatchContentWithCharsetDirective(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	content := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	contentTypeWithCharset := "application/json; charset=utf-8"
@@ -120,7 +120,7 @@ func TestPatchFailedOnWrite(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	content := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
@@ -150,7 +150,7 @@ func TestPatchFailedOnRead(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	contentType := "application/json"
 	httpMethod := "PATCH"
 
@@ -178,7 +178,7 @@ func TestPatchFailedJSON(t *testing.T) {
 	connection := new(MockConnection)
 
 	uuid := "a-real-uuid"
-	collection := "methode"
+	collection := "universal-content"
 	content := map[string]interface{}{"body": "data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
@@ -212,7 +212,7 @@ func TestFailedMongoOnPatch(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods("PATCH")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PATCH", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("PATCH", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)
@@ -230,7 +230,7 @@ func TestFailedMongoOnWrite(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", PatchContent(mongo, &ts)).Methods("PATCH")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("PATCH", "/methode/a-real-uuid", strings.NewReader(`{}`))
+	req, _ := http.NewRequest("PATCH", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)

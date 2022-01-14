@@ -18,8 +18,8 @@ func init() {
 }
 
 var testCollections = map[string]bool{
-	"methode":   true,
-	"wordpress": true,
+	"universal-content": true,
+	"wordpress":         true,
 }
 
 var validationTests = []struct {
@@ -28,7 +28,7 @@ var validationTests = []struct {
 	expectedError error
 }{
 	{
-		"methode",
+		"universal-content",
 		"9694733e-163a-4393-801f-000ab7de5041",
 		nil,
 	},
@@ -120,7 +120,7 @@ func TestFailedMongoDuringAccessValidation(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccess(mongo).Build()).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
+	req, _ := http.NewRequest("GET", "/universal-content/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
@@ -139,7 +139,7 @@ func TestFailedMongoDuringCollectionValidation(t *testing.T) {
 	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccessForCollection(mongo).Build()).Methods("GET")
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/methode/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
+	req, _ := http.NewRequest("GET", "/universal-content/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
 
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
