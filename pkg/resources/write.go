@@ -28,7 +28,7 @@ func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 		resourceID := mux.Vars(r)["resource"]
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 
-		contentType := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, resourceID)
+		contentType := extractAttrFromHeader(r, "Content-Type", "application/json", tid, resourceID)
 
 		schemaVersion := r.Header.Get(SchemaVersionHeader)
 

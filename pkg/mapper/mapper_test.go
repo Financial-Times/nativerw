@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"bytes"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,8 +13,7 @@ const (
 	articleCt      = "application/vnd.ft-upp-article+json; version=1.0; charset=utf-8"
 	articlePlainCt = "application/json; version=1.0; charset=utf-8"
 
-	octetStreamCt = "application/octet-stream; version=1.0"
-	textPlainCt   = "text/plain; charset=iso-8859-1"
+	textPlainCt = "text/plain; charset=iso-8859-1"
 )
 
 func TestWrap(t *testing.T) {
@@ -101,40 +99,9 @@ func TestJsonMappers(t *testing.T) {
 	mockBody.AssertExpectations(t)
 }
 
-func TestBinaryMappers(t *testing.T) {
-	testResource := &Resource{
-		UUID:        "9694733e-163a-4393-801f-000ab7de5041",
-		Content:     []byte("hi"),
-		ContentType: "application/json",
-	}
-
-	var writer = bytes.NewBuffer([]byte{})
-
-	outMapper, _ := OutMapperForContentType("application/octet-stream; someArbitrary=directive")
-	err := outMapper(writer, testResource)
-
-	assert.NoError(t, err, "Shouldn't error")
-	assert.Equal(t, `hi`, strings.TrimSpace(writer.String()))
-
-	inMapper, err := InMapperForContentType("application/octet-stream; someArbitrary=directive")
-	assert.NoError(t, err)
-
-	actual, err := inMapper(ioutil.NopCloser(strings.NewReader(`hi`)))
-	assert.NoError(t, err)
-
-	assert.Equal(t, testResource.Content, actual)
-}
-
 func TestApplicationJsonVariantEval(t *testing.T) {
 	assert.True(t, isApplicationJSONVariantWithDirectives(articleCt))
 	assert.True(t, isApplicationJSONVariantWithDirectives(articlePlainCt))
 
-	assert.False(t, isApplicationJSONVariantWithDirectives(octetStreamCt))
 	assert.False(t, isApplicationJSONVariantWithDirectives(textPlainCt))
-}
-
-func TestOctetStreamVariantEval(t *testing.T) {
-	assert.True(t, isOctetStreamWithDirectives(octetStreamCt))
-
-	assert.False(t, isOctetStreamWithDirectives(articlePlainCt))
 }

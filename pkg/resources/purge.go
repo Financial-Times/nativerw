@@ -41,7 +41,7 @@ func PurgeContent(mongo db.DB) func(writer http.ResponseWriter, req *http.Reques
 			return
 		}
 
-		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "application/octet-stream", tid, uuid)
+		contentTypeHeader := extractAttrFromHeader(r, "Content-Type", "application/json", tid, uuid)
 
 		if err := connection.Delete(collectionID, uuid, revision); err != nil {
 			msg := "Deleting from mongoDB failed"

@@ -23,10 +23,10 @@ func TestObtainTxIDGeneratesANewOneIfNoneAvailable(t *testing.T) {
 	assert.Contains(t, txid, "tid_")
 }
 
-func TestExtractContentTypeHeaderReturnsOctetStreamIfMissing(t *testing.T) {
+func TestExtractContentTypeHeaderReturnsApplicationJsonIfMissing(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/", strings.NewReader(`{}`))
-	contentTypeHeader := extractAttrFromHeader(req, "Content-Type", "application/octet-stream", "", "")
-	assert.Equal(t, "application/octet-stream", contentTypeHeader)
+	contentTypeHeader := extractAttrFromHeader(req, "Content-Type", "application/json", "", "")
+	assert.Equal(t, "application/json", contentTypeHeader)
 }
 func TestExtractContentTypeHeaderReturnsContentType(t *testing.T) {
 	req, _ := http.NewRequest("POST", "/", strings.NewReader(`{}`))

@@ -2,7 +2,6 @@ package resources
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -136,41 +135,6 @@ func TestWriteFailed(t *testing.T) {
 	router.ServeHTTP(w, req)
 	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-}
-
-func TestDefaultsToBinaryMapping(t *testing.T) {
-	mongo := new(MockDB)
-	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
-	inMapper, err := mapper.InMapperForContentType("application/octet-stream")
-	assert.NoError(t, err)
-
-	content, err := inMapper(ioutil.NopCloser(strings.NewReader(`{}`)))
-	assert.NoError(t, err)
-
-	connection.On("Write",
-		"universal-content",
-		&mapper.Resource{
-			UUID:            "a-real-uuid",
-			Content:         content,
-			ContentType:     "application/octet-stream",
-			ContentRevision: 1436773875771421417}).
-		Return(errors.New("i failed"))
-
-	ts := fixedTimestampCreator{}
-
-	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
-
-	req.Header.Add("Content-Type", "application/a-fake-type")
-
-	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
-	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func TestFailedJSON(t *testing.T) {

@@ -1,11 +1,9 @@
 package mapper
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"strings"
 )
 
@@ -43,10 +41,6 @@ func OutMapperForContentType(contentType string) (OutMapper, error) {
 		return jsonVariantOutMapper, nil
 	}
 
-	if isOctetStreamWithDirectives(contentType) {
-		return octetStreamOutMapper, nil
-	}
-
 	return nil, ErrUnsupportedContentType
 }
 
@@ -55,27 +49,14 @@ func jsonVariantOutMapper(w io.Writer, resource *Resource) error {
 	return encoder.Encode(resource.Content)
 }
 
-func octetStreamOutMapper(w io.Writer, resource *Resource) error {
-	data, ok := resource.Content.([]byte)
-	if !ok {
-		return errors.New("error while casting to byte array")
-	}
-	_, err := io.Copy(w, bytes.NewReader(data))
-	return err
-}
-
 // InMapper marshals the transport format into a resource
 type InMapper func(io.ReadCloser) (interface{}, error)
 
 // InMapperForContentType checks the content type if it's a json variant
-// and returns an InMapper. Default mapper for non json variants is an octet stream mapper.
+// and returns an InMapper.
 func InMapperForContentType(contentType string) (InMapper, error) {
 	if isApplicationJSONVariantWithDirectives(contentType) {
 		return jsonVariantInMapper, nil
-	}
-
-	if isOctetStreamWithDirectives(contentType) {
-		return octetStreamInMapper, nil
 	}
 
 	return nil, ErrUnsupportedContentType
@@ -86,11 +67,6 @@ func jsonVariantInMapper(r io.ReadCloser) (interface{}, error) {
 	defer r.Close()
 	err := json.NewDecoder(r).Decode(&c)
 	return c, err
-}
-
-func octetStreamInMapper(r io.ReadCloser) (interface{}, error) {
-	defer r.Close()
-	return ioutil.ReadAll(r)
 }
 
 func isApplicationJSONVariantWithDirectives(contentType string) bool {
@@ -106,10 +82,6 @@ func isApplicationJSONVariantWithDirectives(contentType string) bool {
 	}
 
 	return false
-}
-
-func isOctetStreamWithDirectives(contentType string) bool {
-	return stripDirectives(contentType) == "application/octet-stream"
 }
 
 func stripDirectives(contentType string) string {
