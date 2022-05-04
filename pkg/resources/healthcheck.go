@@ -18,13 +18,16 @@ var sampleResource = &mapper.Resource{
 	Content:     "{\"foo\": [\"a\",\"b\"], \"bar\": 10.4}",
 }
 
-const sampleUUID = "cda5d6a9-cd25-4d76-8bad-9eaa35e85f4a"
+const (
+	sampleUUID = "cda5d6a9-cd25-4d76-8bad-9eaa35e85f4a"
+	systemCode = "nativestorereaderwriter"
+)
 
 // Healthchecks is the /__health endpoint
 func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	return fthealth.Handler(fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
-			SystemCode:  "NativeStoreReaderWriter",
+			SystemCode:  systemCode,
 			Name:        "nativerw",
 			Description: "Reads and Writes data to the UPP Native Store, in the received (native) format",
 			Checks: []fthealth.Check{
