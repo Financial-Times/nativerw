@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -34,7 +35,7 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 				{
 					BusinessImpact:   "Publishing won't work. Writing content to native store is broken.",
 					Name:             "Write to mongoDB",
-					PanicGuide:       "https://dewey.in.ft.com/view/system/NativeStoreReaderWriter",
+					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Writing to mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
 					Checker:          checkWritable(mongo),
@@ -42,7 +43,7 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 				{
 					BusinessImpact:   "Reading content from native store is broken.",
 					Name:             "Read from mongoDB",
-					PanicGuide:       "https://dewey.in.ft.com/view/system/NativeStoreReaderWriter",
+					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Reading from mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
 					Checker:          checkReadable(mongo),
