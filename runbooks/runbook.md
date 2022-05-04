@@ -116,7 +116,7 @@ To rotate credentials you need to login to a particular cluster and update varni
 Service in UPP K8S Publish clusters:
 
 *   Publish-Prod-EU health: <https://upp-prod-publish-eu.ft.com/__health/__pods-health?service-name=nativerw>
-*   Publish-Prod-US health: <https://upp-prod-publish-eu.ft.com/__health/__pods-health?service-name=nativerw>
+*   Publish-Prod-US health: <https://upp-prod-publish-us.ft.com/__health/__pods-health?service-name=nativerw>
 
 ## First Line Troubleshooting
 
