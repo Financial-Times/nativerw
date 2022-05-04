@@ -58,7 +58,7 @@ func TestHealthchecksFail(t *testing.T) {
 
 	assert.Equal(t, 1.0, healthResult.SchemaVersion)
 	assert.Equal(t, "nativerw", healthResult.Name)
-	assert.Equal(t, "NativeStoreReaderWriter", healthResult.SystemCode)
+	assert.Equal(t, "nativestorereaderwriter", healthResult.SystemCode)
 	assert.Equal(t, "Reads and Writes data to the UPP Native Store, in the received (native) format", healthResult.Description)
 	assert.False(t, healthResult.Ok)
 	assert.Equal(t, uint8(1), healthResult.Severity)
@@ -73,7 +73,7 @@ func TestHealthchecksFail(t *testing.T) {
 		} else {
 			t.Fail() // a new test has been introduced that isn't covered here
 		}
-		assert.Equal(t, "https://dewey.in.ft.com/view/system/NativeStoreReaderWriter", check.PanicGuide)
+		assert.Equal(t, "https://runbooks.ftops.tech/nativestorereaderwriter", check.PanicGuide)
 		assert.False(t, check.Ok)
 		assert.Equal(t, uint8(1), check.Severity)
 	}

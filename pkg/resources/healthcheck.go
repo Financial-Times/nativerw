@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -18,20 +19,23 @@ var sampleResource = &mapper.Resource{
 	Content:     "{\"foo\": [\"a\",\"b\"], \"bar\": 10.4}",
 }
 
-const sampleUUID = "cda5d6a9-cd25-4d76-8bad-9eaa35e85f4a"
+const (
+	sampleUUID = "cda5d6a9-cd25-4d76-8bad-9eaa35e85f4a"
+	systemCode = "nativestorereaderwriter"
+)
 
 // Healthchecks is the /__health endpoint
 func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	return fthealth.Handler(fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
-			SystemCode:  "NativeStoreReaderWriter",
+			SystemCode:  systemCode,
 			Name:        "nativerw",
 			Description: "Reads and Writes data to the UPP Native Store, in the received (native) format",
 			Checks: []fthealth.Check{
 				{
 					BusinessImpact:   "Publishing won't work. Writing content to native store is broken.",
 					Name:             "Write to mongoDB",
-					PanicGuide:       "https://dewey.in.ft.com/view/system/NativeStoreReaderWriter",
+					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Writing to mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
 					Checker:          checkWritable(mongo),
@@ -39,7 +43,7 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 				{
 					BusinessImpact:   "Reading content from native store is broken.",
 					Name:             "Read from mongoDB",
-					PanicGuide:       "https://dewey.in.ft.com/view/system/NativeStoreReaderWriter",
+					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Reading from mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
 					Checker:          checkReadable(mongo),
