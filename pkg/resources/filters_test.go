@@ -19,7 +19,6 @@ func init() {
 
 var testCollections = map[string]bool{
 	"universal-content": true,
-	"wordpress":         true,
 }
 
 var validationTests = []struct {
@@ -29,11 +28,6 @@ var validationTests = []struct {
 }{
 	{
 		"universal-content",
-		"9694733e-163a-4393-801f-000ab7de5041",
-		nil,
-	},
-	{
-		"wordpress",
 		"9694733e-163a-4393-801f-000ab7de5041",
 		nil,
 	},

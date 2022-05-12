@@ -242,7 +242,7 @@ func TestDefaultContentType(t *testing.T) {
 	mongo := new(MockDB)
 	connection := new(MockConnection)
 	uuid := "a-real-uuid"
-	collection := "wordpress"
+	collection := "universal-content"
 	updatedContent := map[string]interface{}{"body": "updated-data"}
 	contentType := "application/json"
 	httpMethod := "PATCH"
