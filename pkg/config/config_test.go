@@ -21,7 +21,6 @@ func TestConfigFromReader(t *testing.T) {
          "collections": [
             "video",
             "universal-content",
-            "wordpress",
             "v1-metadata"
          ]
       }`)
@@ -30,7 +29,7 @@ func TestConfigFromReader(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, randomness, config.Mongos)
 	assert.Equal(t, "native-store", config.DBName)
-	assert.Equal(t, []string{"video", "universal-content", "wordpress", "v1-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "universal-content", "v1-metadata"}, config.Collections)
 	assert.Equal(t, 8080, config.Server.Port)
 }
 
@@ -57,7 +56,6 @@ func TestConfigFromFile(t *testing.T) {
          "collections": [
             "video",
             "universal-content",
-            "wordpress",
             "v1-metadata"
          ]
       }`))
@@ -68,6 +66,6 @@ func TestConfigFromFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, randomness, config.Mongos)
 	assert.Equal(t, "native-store", config.DBName)
-	assert.Equal(t, []string{"video", "universal-content", "wordpress", "v1-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "universal-content", "v1-metadata"}, config.Collections)
 	assert.Equal(t, 8080, config.Server.Port)
 }
