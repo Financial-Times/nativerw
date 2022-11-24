@@ -58,4 +58,4 @@ The nativerw supports the following endpoints:
 
 ### Logging
 
-* The application uses [go-logger](https://github.com/Financial-Times/go-logger ); the log file is initialised in [app.go](app.go).
+* The application uses [go-logger](https://github.com/Financial-Times/go-logger ); the log file is initialised in [app.go](cmd/nativerw/main.go).
