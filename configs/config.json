@@ -5,7 +5,6 @@
    "dbName": "native-store",
    "collections": [
       "universal-content",
-      "v1-metadata",
       "video",
       "video-metadata",
       "pac-metadata",
