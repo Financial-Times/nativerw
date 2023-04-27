@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"testing"
 	"time"
 
@@ -28,11 +28,10 @@ func generateResource() *mapper.Resource {
 }
 
 func TestReadWriteDelete(t *testing.T) {
-	mongo := startMongo(t)
-	connection, err := mongo.Open()
+	connection, err := startMongo(t)
 
 	assert.NoError(t, err)
-	defer connection.Close()
+
 	expectedResource := generateResource()
 	err = connection.Write("universal-content", expectedResource)
 	assert.NoError(t, err)
@@ -56,11 +55,8 @@ func TestReadWriteDelete(t *testing.T) {
 }
 
 func TestGetSupportedCollections(t *testing.T) {
-	mongo := startMongo(t)
-	connection, err := mongo.Open()
+	connection, err := startMongo(t)
 	assert.NoError(t, err)
-
-	defer connection.Close()
 
 	expected := map[string]bool{"universal-content": true} // this is set in mongo_test.go
 	actual := connection.GetSupportedCollections()
@@ -68,22 +64,28 @@ func TestGetSupportedCollections(t *testing.T) {
 }
 
 func TestEnsureIndexes(t *testing.T) {
-	mongo := startMongo(t)
-	connection, err := mongo.Open()
+	connection, err := startMongo(t)
 	assert.NoError(t, err)
 
-	defer connection.Close()
-
 	connection.EnsureIndex()
-	indexes, err := connection.(*mongoConnection).session.DB("native-store").C("universal-content").Indexes()
+	indexes := connection.(*mongoConnection).client.Database("native-store").Collection("universal-content").Indexes()
 
 	assert.NoError(t, err)
 	count := 0
-	for _, index := range indexes {
-		if index.Name == "uuid-revision-index" {
-			assert.True(t, index.Background)
-			assert.True(t, index.Unique)
-			assert.Equal(t, []string{"uuid", "content-revision"}, index.Key)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	cursor, err := indexes.List(ctx)
+	assert.NoError(t, err)
+
+	for cursor.Next(ctx) {
+		var index primitive.M
+		err = cursor.Decode(&index)
+		assert.NoError(t, err)
+
+		if index["name"] == "uuid-revision-index" {
+			assert.True(t, index["unique"].(bool))
+			assert.Equal(t, primitive.M{"uuid": int32(1), "content-revision": int32(1)}, index["key"])
 			count = count + 1
 		}
 	}
@@ -91,95 +93,9 @@ func TestEnsureIndexes(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestAwaitConnectionFailsIfNotOpened(t *testing.T) {
-	mongo := startMongo(t)
-
-	_, err := mongo.Await()
-	assert.Error(t, err)
-}
-
-func TestAwaitConnectionBlocks(t *testing.T) {
-	mongo := startMongo(t)
-
-	mongo.(*mongoDB).connection = NewOptional(func() (interface{}, error) {
-		time.Sleep(50 * time.Millisecond)
-		return &mongoConnection{dbName: "test-collection"}, nil
-	})
-
-	connection, err := mongo.Await()
-	assert.NoError(t, err)
-	assert.Equal(t, "test-collection", connection.(*mongoConnection).dbName)
-}
-
-func TestAwaitConnectionFails(t *testing.T) {
-	mongo := startMongo(t)
-
-	mongo.(*mongoDB).connection = NewOptional(func() (interface{}, error) {
-		time.Sleep(50 * time.Millisecond)
-		return nil, errors.New("went spectacularly wrong")
-	})
-
-	connection, err := mongo.Await()
-	assert.Error(t, err)
-	assert.Nil(t, connection)
-}
-
-func TestAwaitConnectionReturnsIfInitialised(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-	ch := make(chan bool, 1)
-	defer func() {
-		ch <- true
-		close(ch)
-	}()
-
-	mongo.connection = NewOptional(func() (interface{}, error) {
-		<-ch
-		return &mongoConnection{dbName: "psych!-changed-it"}, nil
-	})
-
-	mongo.connection.val = &mongoConnection{dbName: "find-me-pls"}
-
-	connection, err := mongo.Await()
-	assert.NoError(t, err)
-	assert.Equal(t, "find-me-pls", connection.(*mongoConnection).dbName)
-}
-
-func TestOpenWillReturnConnectionIfAlreadyInitialised(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-
-	mongo.connection = NewOptional(func() (interface{}, error) {
-		return &mongoConnection{dbName: "faked"}, nil
-	})
-
-	_, err := mongo.connection.Block()
-	assert.NoError(t, err)
-
-	connection, err := mongo.Open()
-	assert.NoError(t, err)
-	assert.Equal(t, "faked", connection.(*mongoConnection).dbName)
-}
-
-func TestOpenFailsIfInitialisationFailed(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-
-	mongo.connection = NewOptional(func() (interface{}, error) {
-		return nil, errors.New("i failed")
-	})
-
-	_, _ = mongo.connection.Block()
-
-	connection, err := mongo.Open()
-	assert.Error(t, err)
-	assert.Nil(t, connection)
-}
-
 func TestReadIDs(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-	connection, err := mongo.Open()
-
+	connection, err := startMongo(t)
 	assert.NoError(t, err)
-
-	defer connection.Close()
 
 	expectedResource := generateResource()
 
@@ -204,12 +120,9 @@ func TestReadIDs(t *testing.T) {
 }
 
 func TestReadMoreThanOneBatch(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-	connection, err := mongo.Open()
+	connection, err := startMongo(t)
 
 	assert.NoError(t, err)
-
-	defer connection.Close()
 
 	for range make([]struct{}, 64) {
 		expectedResource := generateResource()
@@ -234,12 +147,9 @@ func TestReadMoreThanOneBatch(t *testing.T) {
 }
 
 func TestCancelReadIDs(t *testing.T) {
-	mongo := startMongo(t).(*mongoDB)
-	connection, err := mongo.Open()
+	connection, err := startMongo(t)
 
 	assert.NoError(t, err)
-
-	defer connection.Close()
 
 	for range make([]struct{}, 64) {
 		expectedResource := generateResource()
@@ -273,34 +183,4 @@ func TestCancelReadIDs(t *testing.T) {
 		assert.NotEqual(t, "", uuid) // all uuids should be non-zero
 		count++
 	}
-}
-
-func TestCheckMongoUrlsValidUrls(t *testing.T) {
-	err := CheckMongoUrls("host:port,host2:port2", 2)
-
-	assert.Nil(t, err)
-}
-
-func TestCheckMongoUrlsFewerUrlsThanExpected(t *testing.T) {
-	err := CheckMongoUrls("host:port,host2:port2", 3)
-
-	assert.NotNil(t, err)
-}
-
-func TestCheckMongoUrlsMissingPort(t *testing.T) {
-	err := CheckMongoUrls("host:port,host2:", 2)
-
-	assert.NotNil(t, err)
-}
-
-func TestCheckMongoUrlsMissingHost(t *testing.T) {
-	err := CheckMongoUrls("host:port,:port", 2)
-
-	assert.NotNil(t, err)
-}
-
-func TestCheckMongoUrlsInvalidSeparator(t *testing.T) {
-	err := CheckMongoUrls("host:port;host1:port1", 2)
-
-	assert.NotNil(t, err)
 }

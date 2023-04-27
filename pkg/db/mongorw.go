@@ -281,6 +281,10 @@ func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan
 
 		var result map[string]interface{}
 		for cur.Next(ctx) {
+			if ctx.Err() != nil {
+				//for some reason canceling the context doesn't cancel the `cur.Next()`
+				break
+			}
 			if err := cur.Decode(&result); err != nil {
 				break
 			}

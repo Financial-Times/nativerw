@@ -9,7 +9,7 @@ jobs:
     docker:
       - image: golang:1
         environment:
-          MONGO_TEST_URL: localhost:27017
+          MONGO_TEST_URL: mongodb://localhost:27017
           CIRCLE_TEST_REPORTS: /tmp/test-results
           CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
       - image: mongo:3.2.18
@@ -27,8 +27,11 @@ workflows:
           name: build-docker-image
           requires:
             - build
+          context: cm-team-github
   snyk-scanning:
     jobs:
       - ft-golang-ci/scan:
           name: scan-dependencies
-          context: cm-team-snyk
+          context:
+            - cm-team-snyk
+            - cm-team-github
