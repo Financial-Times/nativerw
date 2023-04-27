@@ -23,12 +23,6 @@ const (
 	contentRevisionName = "content-revision"
 )
 
-type mongoDB struct {
-	config      documentdb.ConnectionParams
-	Collections []string
-	connection  *Optional
-}
-
 type mongoConnection struct {
 	dbName      string
 	client      *mongo.Client
@@ -62,20 +56,6 @@ func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string
 	connection := &mongoConnection{docDBConf.Database, client, colls}
 
 	return connection, err
-}
-
-func (m *mongoDB) openMongoSession() (*mongoConnection, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	client, err := documentdb.NewClient(ctx, m.config)
-	if err != nil {
-		return nil, err
-	}
-
-	collections := createMapWithAllowedCollections(m.Collections)
-	connection := &mongoConnection{m.config.Database, client, collections}
-
-	return connection, nil
 }
 
 func (ma *mongoConnection) GetSupportedCollections() map[string]bool {

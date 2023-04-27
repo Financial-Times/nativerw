@@ -15,40 +15,36 @@ import (
 )
 
 func TestHealthchecks(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write", healthCheckColl, sampleResource).Return(nil)
 	connection.On("Read", healthCheckColl, sampleUUID).Return(sampleResource, true, nil)
+	connection.On("Ping").Return(nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/__health", Healthchecks(mongo)).Methods("GET")
+	router.HandleFunc("/__health", Healthchecks(connection)).Methods("GET")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/__health", nil)
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestHealthchecksFail(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write", healthCheckColl, sampleResource).Return(errors.New("no writes 4 u"))
 	connection.On("Read", healthCheckColl, sampleUUID).Return(sampleResource, true, errors.New("no reads 4 u"))
+	connection.On("Ping").Return(errors.New("no reads 4 u"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/__health", Healthchecks(mongo)).Methods("GET")
+	router.HandleFunc("/__health", Healthchecks(connection)).Methods("GET")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/__health", nil)
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	healthResult := fthealth.HealthResult{}
@@ -80,15 +76,13 @@ func TestHealthchecksFail(t *testing.T) {
 }
 
 func TestGTG(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write", healthCheckColl, sampleResource).Return(nil)
 	connection.On("Read", healthCheckColl, sampleUUID).Return(sampleResource, true, nil)
+	connection.On("Ping").Return(nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(mongo))).Methods("GET")
+	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(connection))).Methods("GET")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
@@ -98,22 +92,20 @@ func TestGTG(t *testing.T) {
 	r := w.Result()
 	defer r.Body.Close()
 
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
 	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }
 
 func TestGTGFailsOnRead(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", healthCheckColl, sampleUUID).Return(sampleResource, true, errors.New("no reads 4 u"))
 	connection.On("Write", healthCheckColl, sampleResource).Return(nil)
+	connection.On("Ping").Return(errors.New("no reads 4 u"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(mongo))).Methods("GET")
+	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(connection))).Methods("GET")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
@@ -123,22 +115,20 @@ func TestGTGFailsOnRead(t *testing.T) {
 	r := w.Result()
 	defer r.Body.Close()
 
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
 	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
 }
 
 func TestGTGFailsOnWrite(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write", healthCheckColl, sampleResource).Return(errors.New("no writes 4 u"))
 	connection.On("Read", healthCheckColl, sampleUUID).Return(sampleResource, true, nil)
+	connection.On("Ping").Return(errors.New("no reads 4 u"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(mongo))).Methods("GET")
+	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(connection))).Methods("GET")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/__gtg", nil)
@@ -148,43 +138,6 @@ func TestGTGFailsOnWrite(t *testing.T) {
 	r := w.Result()
 	defer r.Body.Close()
 
-	mongo.AssertExpectations(t)
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
-	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
-}
-
-func TestFailedMongoDuringHealthcheck(t *testing.T) {
-	mongo := new(MockDB)
-	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
-
-	router := mux.NewRouter()
-	router.HandleFunc("/__health", Healthchecks(mongo)).Methods("GET")
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/__health", nil)
-
-	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestFailedMongoDuringGTG(t *testing.T) {
-	mongo := new(MockDB)
-	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
-
-	router := mux.NewRouter()
-	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(GoodToGo(mongo))).Methods("GET")
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/__gtg", nil)
-
-	router.ServeHTTP(w, req)
-
-	r := w.Result()
-	defer r.Body.Close()
-
-	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.Equal(t, "text/plain; charset=US-ASCII", r.Header.Get("Content-Type"))
 	assert.Equal(t, "no-cache", r.Header.Get("Cache-Control"))
