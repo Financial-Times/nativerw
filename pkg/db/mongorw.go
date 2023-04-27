@@ -2,18 +2,20 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pborman/uuid"
-	"gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/Financial-Times/go-logger"
-	"github.com/Financial-Times/nativerw/pkg/config"
 	"github.com/Financial-Times/nativerw/pkg/mapper"
+	"github.com/Financial-Times/upp-go-sdk/pkg/documentdb"
 )
 
 const (
@@ -22,20 +24,15 @@ const (
 )
 
 type mongoDB struct {
-	config     *config.Configuration
-	connection *Optional
+	config      documentdb.ConnectionParams
+	Collections []string
+	connection  *Optional
 }
 
 type mongoConnection struct {
 	dbName      string
-	session     *mgo.Session
+	client      *mongo.Client
 	collections map[string]bool
-}
-
-// DB handles opening the initial connection to Mongo
-type DB interface {
-	Open() (Connection, error)
-	Await() (Connection, error)
 }
 
 // Connection contains all mongo request logic, including reads, writes and deletes.
@@ -48,77 +45,41 @@ type Connection interface {
 	ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error)
 	ReadIDs(ctx context.Context, collection string) (chan string, error)
 	ReadRevisions(collection string, uuidString string) (res []int64, err error)
-	Count(collection string, uuidString string, contentRevision int64) (count int, err error)
-	Close()
+	Count(collection string, uuidString string, contentRevision int64) (count int64, err error)
+	Ping() error
 }
 
 // NewDBConnection dials the mongo cluster, and returns a new handler DB instance
-func NewDBConnection(config *config.Configuration) DB {
-	return &mongoDB{config: config}
-}
-
-func (m *mongoDB) Await() (Connection, error) {
-	if m.connection == nil {
-		return nil, errors.New("please Open() a new connection before awaiting")
-	}
-
-	if m.connection.Nil() {
-		connection, err := m.connection.Block()
-		if err != nil {
-			return nil, err
-		}
-		return connection.(*mongoConnection), err
-	}
-	return m.connection.Get().(*mongoConnection), nil
-}
-
-func (m *mongoDB) Open() (Connection, error) {
-	if m.connection == nil {
-		m.connection = NewOptional(func() (interface{}, error) {
-			connection, err := m.openMongoSession()
-			for err != nil {
-				logger.WithError(err).Error("couldn't establish connection to mongoDB")
-				time.Sleep(5 * time.Second)
-
-				connection, err = m.openMongoSession()
-			}
-			return connection, err
-		})
-
-		connection, err := m.connection.Block()
-		if err != nil {
-			return nil, err
-		}
-
-		return connection.(*mongoConnection), err
-	}
-
-	if m.connection.Nil() {
-		return nil, errors.New("mongo connection is not yet initialised")
-	}
-
-	return m.connection.Get().(*mongoConnection), nil
-}
-
-func (m *mongoDB) openMongoSession() (*mongoConnection, error) {
-	session, err := mgo.DialWithTimeout(m.config.Mongos, 30*time.Second)
+func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string) (Connection, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	client, err := documentdb.NewClient(ctx, docDBConf)
 	if err != nil {
 		return nil, err
 	}
 
-	session.SetMode(mgo.Strong, true)
-	collections := createMapWithAllowedCollections(m.config.Collections)
-	connection := &mongoConnection{m.config.DBName, session, collections}
+	colls := createMapWithAllowedCollections(collections)
+	connection := &mongoConnection{docDBConf.Database, client, colls}
+
+	return connection, err
+}
+
+func (m *mongoDB) openMongoSession() (*mongoConnection, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	client, err := documentdb.NewClient(ctx, m.config)
+	if err != nil {
+		return nil, err
+	}
+
+	collections := createMapWithAllowedCollections(m.Collections)
+	connection := &mongoConnection{m.config.Database, client, collections}
 
 	return connection, nil
 }
 
 func (ma *mongoConnection) GetSupportedCollections() map[string]bool {
 	return ma.collections
-}
-
-func (ma *mongoConnection) Close() {
-	ma.session.Close()
 }
 
 func createMapWithAllowedCollections(collections []string) map[string]bool {
@@ -130,43 +91,48 @@ func createMapWithAllowedCollections(collections []string) map[string]bool {
 }
 
 func (ma *mongoConnection) EnsureIndex() {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
-
-	index := mgo.Index{
-		Name:       "uuid-revision-index",
-		Key:        []string{"uuid", "content-revision"},
-		Background: true,
-		Unique:     true,
+	index := mongo.IndexModel{
+		Keys: bsonx.Doc{
+			{"uuid", bsonx.Int32(1)},
+			{"content-revision", bsonx.Int32(1)},
+		},
+		Options: options.Index().
+			SetName("uuid-revision-index").
+			SetUnique(true),
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+
 	for coll := range ma.collections {
-		if err := newSession.DB(ma.dbName).C(coll).EnsureIndex(index); err != nil {
-			logger.WithError(err).Info("could not EnsureIndex: %s ", index)
+		indexes := ma.client.Database(ma.dbName).Collection(coll).Indexes()
+		if _, err := indexes.CreateOne(ctx, index); err != nil {
+			logger.WithError(err).Infof("could not EnsureIndex for collection %s", coll)
 		}
 	}
 }
 
 func (ma *mongoConnection) Delete(collection string, uuidString string, revision int64) error {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
-
-	return coll.Remove(bson.D{
-		bson.DocElem{Name: uuidName, Value: bsonUUID},
-		bson.DocElem{Name: contentRevisionName, Value: revision},
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
+	rs, err := coll.DeleteOne(ctx, bsonx.Doc{
+		{Key: uuidName, Value: bsonUUID},
+		{Key: contentRevisionName, Value: bsonx.Int64(revision)},
 	})
+	fmt.Println(rs.DeletedCount)
+
+	return err
 }
 
 func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) error {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
-
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(resource.UUID))}
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(resource.UUID))
 
 	bsonResource := map[string]interface{}{
 		"uuid":             bsonUUID,
@@ -176,30 +142,38 @@ func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) e
 		"schema-version":   resource.SchemaVersion,
 		"content-revision": resource.ContentRevision,
 	}
-
-	_, err := coll.Upsert(
-		bson.D{
-			bson.DocElem{Name: uuidName, Value: bsonUUID},
-			bson.DocElem{Name: contentRevisionName, Value: resource.ContentRevision}},
-		bsonResource)
+	filter := bson.M{
+		uuidName:            bsonUUID,
+		contentRevisionName: resource.ContentRevision,
+	}
+	update := bson.M{"$set": bsonResource}
+	opts := options.Update().SetUpsert(true)
+	_, err := coll.UpdateOne(ctx, filter, update, opts)
 
 	return err
 }
 
 func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error) {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
+	opts := options.FindOne().
+		SetSort(bsonx.Doc{
+			{"content-revision", bsonx.Int32(-1)},
+		})
+	result := coll.FindOne(ctx, bson.M{uuidName: bsonUUID}, opts)
 
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
-
-	var bsonResource map[string]interface{}
-
-	if err = coll.Find(bson.M{uuidName: bsonUUID}).Sort("-content-revision").One(&bsonResource); err != nil {
-		if err == mgo.ErrNotFound {
+	if err = result.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
 			return res, false, nil
 		}
+		return res, false, err
+	}
+
+	var bsonResource map[string]interface{}
+	if err = result.Decode(&bsonResource); err != nil {
 		return res, false, err
 	}
 
@@ -208,25 +182,25 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 }
 
 func (ma *mongoConnection) ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error) {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
-
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
-
-	var bsonResource map[string]interface{}
-
-	err = coll.Find(
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
+	result := coll.FindOne(ctx,
 		bson.M{
 			uuidName:           bsonUUID,
-			"content-revision": revision}).
-		One(&bsonResource)
-	if err != nil {
-		if err == mgo.ErrNotFound {
+			"content-revision": revision})
+
+	if err = result.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 		return nil, err
+	}
+	var bsonResource map[string]interface{}
+	if err = result.Decode(&bsonResource); err != nil {
+		return res, err
 	}
 
 	res = ma.mapBsonToResource(bsonResource)
@@ -234,7 +208,7 @@ func (ma *mongoConnection) ReadSingleRevision(collection string, uuidString stri
 }
 
 func (ma *mongoConnection) mapBsonToResource(bsonResource map[string]interface{}) *mapper.Resource {
-	uuidData := bsonResource["uuid"].(bson.Binary).Data
+	uuidData := bsonResource["uuid"].(primitive.Binary).Data
 
 	res := &mapper.Resource{
 		UUID:        uuid.UUID(uuidData).String(),
@@ -261,24 +235,30 @@ func (ma *mongoConnection) mapBsonToResource(bsonResource map[string]interface{}
 }
 
 func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
+	opts := options.Find().SetProjection(bson.M{"content-revision": 1})
+	cur, err := coll.Find(ctx, bson.M{uuidName: bsonUUID}, opts)
 
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
-
-	var bsonResource []map[string]interface{}
-	if err = coll.Find(bson.M{uuidName: bsonUUID}).Select(bson.M{"content-revision": 1}).All(&bsonResource); err != nil {
-		if err == mgo.ErrNotFound {
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 		return nil, err
 	}
+	defer cur.Close(ctx)
 
+	var bsonResource map[string]interface{}
 	res = []int64{}
-	for _, v := range bsonResource {
-		s, ok := v["content-revision"].(int64)
+	for cur.Next(ctx) {
+		err = cur.Decode(&bsonResource)
+		if err != nil {
+			return nil, err
+		}
+		s, ok := bsonResource["content-revision"].(int64)
 		if !ok {
 			return nil, err
 		}
@@ -288,15 +268,14 @@ func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (
 	return res, nil
 }
 
-func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int, err error) {
-	newSession := ma.session.Copy()
-	defer newSession.Close()
+func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int64, err error) {
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	coll := newSession.DB(ma.dbName).C(collection)
+	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
+	n, err := coll.CountDocuments(ctx, bson.M{uuidName: bsonUUID, contentRevisionName: contentRevision})
 
-	bsonUUID := bson.Binary{Kind: 0x04, Data: []byte(uuid.Parse(uuidString))}
-
-	n, err := coll.Find(bson.M{uuidName: bsonUUID, contentRevisionName: contentRevision}).Count()
 	if err != nil {
 		return 0, err
 	}
@@ -304,52 +283,37 @@ func (ma *mongoConnection) Count(collection string, uuidString string, contentRe
 }
 
 func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan string, error) {
+	coll := ma.client.Database(ma.dbName).Collection(collection)
+
+	opts := options.Find().
+		SetProjection(bson.M{uuidName: true}).
+		SetBatchSize(32)
+	cur, err := coll.Find(ctx, bson.M{}, opts)
+
 	ids := make(chan string, 8)
-
-	newSession := ma.session.Copy()
-	coll := newSession.DB(ma.dbName).C(collection)
-
-	iter := coll.Find(nil).Select(bson.M{uuidName: true}).Batch(32).Iter()
-
-	if err := iter.Err(); err != nil {
-		newSession.Close()
+	if err != nil {
 		return ids, err
 	}
 
 	go func() {
-		defer newSession.Close()
-		defer iter.Close()
+		defer cur.Close(ctx)
 		defer close(ids)
 
 		var result map[string]interface{}
-
-		for iter.Next(&result) {
-			if err := ctx.Err(); err != nil {
+		for cur.Next(ctx) {
+			if err := cur.Decode(&result); err != nil {
 				break
 			}
-
-			ids <- uuid.UUID(result["uuid"].(bson.Binary).Data).String()
+			ids <- uuid.UUID(result["uuid"].(primitive.Binary).Data).String()
 		}
 	}()
 
 	return ids, nil
 }
 
-func CheckMongoUrls(providedMongoUrls string, expectedMongoNodeCount int) error {
-	mongoUrls := strings.Split(providedMongoUrls, ",")
-	actualMongoNodeCount := len(mongoUrls)
-	if actualMongoNodeCount != expectedMongoNodeCount {
-		return fmt.Errorf("the provided list of MongoDB URLs should have %d instances, but it has %d instead. Provided MongoDB URLs are: %s", expectedMongoNodeCount, actualMongoNodeCount, providedMongoUrls)
-	}
+func (ma *mongoConnection) Ping() error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	for _, mongoURL := range mongoUrls {
-		urlComponents := strings.Split(mongoURL, ":")
-		noOfURLComponents := len(urlComponents)
-
-		if noOfURLComponents != 2 || urlComponents[0] == "" || urlComponents[1] == "" {
-			return fmt.Errorf("one of the MongoDB URLs is invalid: %s. It should have host and port", mongoURL)
-		}
-	}
-
-	return nil
+	return ma.client.Ping(ctx, readpref.Primary())
 }

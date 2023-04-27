@@ -15,15 +15,9 @@ import (
 	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 )
 
-func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
+func PatchContent(connection db.Connection, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		collectionID := mux.Vars(r)["collection"]
@@ -129,9 +123,11 @@ func PatchContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 
 // Rules to modify content :
 // 1- A field in order to be updated/removed must exists in both data sources (patchC, originalC):
+//
 //	1.1 Besides, in case of being updated, the field must be the same type (basic type, or slice).
 //	1.2 In case of being removed, the field in PatchC must be 'nil' and must exists in originalC.
 //	1.3 An empty patch data will not modify the original data stored in the DB.
+//
 // 2- New fields can also be added, whenever the new field does not exists in originalC and it is not 'nil' in PatchC.
 // Note: This method always returns an object (check rules above), it never panics and does not returns any errors
 // Note: slices are being treated as a single object, therefore a slice in PatchD will always overwrite an originalD's.

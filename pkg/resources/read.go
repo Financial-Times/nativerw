@@ -18,15 +18,9 @@ import (
 )
 
 // ReadContent reads the native data for the given id and collection
-func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func ReadContent(connection db.Connection) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		vars := mux.Vars(r)
@@ -77,16 +71,10 @@ func ReadContent(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//ReadSingleRevision reads the native data for the given id/collection/revision
-func ReadSingleRevision(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+// ReadSingleRevision reads the native data for the given id/collection/revision
+func ReadSingleRevision(connection db.Connection) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		vars := mux.Vars(r)
@@ -151,15 +139,9 @@ func ReadSingleRevision(mongo db.DB) func(w http.ResponseWriter, r *http.Request
 }
 
 // ReadRevisions returns a list with all the revisions for an uuid
-func ReadRevisions(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func ReadRevisions(connection db.Connection) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 		vars := mux.Vars(r)
@@ -198,15 +180,9 @@ func ReadRevisions(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ReadIDs(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func ReadIDs(connection db.Connection) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("Entering ReadIDs")
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		vars := mux.Vars(r)
 		coll := vars["collection"]

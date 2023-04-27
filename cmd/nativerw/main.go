@@ -15,6 +15,7 @@ import (
 	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/Financial-Times/nativerw/pkg/resources"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/Financial-Times/upp-go-sdk/pkg/documentdb"
 )
 
 const (
@@ -24,18 +25,23 @@ const (
 
 func main() {
 	cliApp := cli.App(appName, appDescription)
-	mongos := cliApp.String(cli.StringOpt{
-		Name:   "mongos",
+	dbAddress := cliApp.String(cli.StringOpt{
+		Name:   "dbAddress",
 		Value:  "",
-		Desc:   "Mongo addresses to connect to in format: host1:port1[,host2:port2,...]",
-		EnvVar: "MONGOS",
+		Desc:   "DocumentDB address to connect to",
+		EnvVar: "DB_CLUSTER_ADDRESS",
 	})
-
-	mongoNodeCount := cliApp.Int(cli.IntOpt{
-		Name:   "mongo_node_count",
-		Value:  3,
-		Desc:   "Number of mongoDB instances",
-		EnvVar: "MONGO_NODE_COUNT",
+	dbUsername := cliApp.String(cli.StringOpt{
+		Name:   "dbUsername",
+		Value:  "",
+		Desc:   "Username to connect to DocumentDB",
+		EnvVar: "DB_USERNAME",
+	})
+	dbPassword := cliApp.String(cli.StringOpt{
+		Name:   "dbPassword",
+		Value:  "",
+		Desc:   "Password to use to connect to DocumentDB",
+		EnvVar: "DB_PASSWORD",
 	})
 
 	configFile := cliApp.String(cli.StringOpt{
@@ -67,30 +73,26 @@ func main() {
 			logger.WithError(err).Fatal("Error reading the configuration")
 		}
 
-		if err = db.CheckMongoUrls(*mongos, *mongoNodeCount); err != nil {
-			logger.WithError(err).Fatalf("Provided mongoDB urls %s are invalid", *mongos)
-		}
-
-		conf.Mongos = *mongos
 		logger.Infof("Using configuration %# v", pretty.Formatter(conf))
-
 		logger.ServiceStartedEvent(conf.Server.Port)
 		tidsToSkipRegex := regexp.MustCompile(*tidsToSkip)
-		mongo := db.NewDBConnection(conf)
+
+		docdb := documentdb.ConnectionParams{
+			Host:     *dbAddress,
+			Username: *dbUsername,
+			Password: *dbPassword,
+			Database: conf.DBName,
+		}
+		mongo, err := db.NewDBConnection(docdb, conf.Collections)
+		if err != nil {
+			logger.WithError(err).
+				Fatal("Unable to connect to DocumentDB")
+		}
 		router(mongo, tidsToSkipRegex, *disablePurge)
 
 		go func() {
-			connection, mErr := mongo.Open()
-			if mErr != nil {
-				logger.WithError(mErr).Error("Mongo connection not yet established, awaiting stable connection")
-				connection, mErr = mongo.Await()
-				if mErr != nil {
-					logger.WithError(mErr).Fatal("Unrecoverable error connecting to mongo")
-				}
-			}
-
 			logger.Info("Established connection to mongoDB.")
-			connection.EnsureIndex()
+			mongo.EnsureIndex()
 		}()
 
 		err = http.ListenAndServe(":"+strconv.Itoa(conf.Server.Port), nil)
@@ -105,7 +107,7 @@ func main() {
 	}
 }
 
-func router(mongo db.DB, tidsToSkipRegex *regexp.Regexp, disablePurge bool) {
+func router(mongo db.Connection, tidsToSkipRegex *regexp.Regexp, disablePurge bool) {
 	ts := resources.CurrentTimestampCreator{}
 
 	r := mux.NewRouter()

@@ -25,7 +25,7 @@ const (
 )
 
 // Healthchecks is the /__health endpoint
-func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
+func Healthchecks(connection db.Connection) func(w http.ResponseWriter, r *http.Request) {
 	return fthealth.Handler(fthealth.TimedHealthCheck{
 		HealthCheck: fthealth.HealthCheck{
 			SystemCode:  systemCode,
@@ -38,7 +38,7 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Writing to mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
-					Checker:          checkWritable(mongo),
+					Checker:          checkWritable(connection),
 				},
 				{
 					BusinessImpact:   "Reading content from native store is broken.",
@@ -46,7 +46,7 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 					PanicGuide:       fmt.Sprintf("https://runbooks.ftops.tech/%s", systemCode),
 					Severity:         1,
 					TechnicalSummary: "Reading from mongoDB is broken. Check mongoDB is up, its disk space, ports, network.",
-					Checker:          checkReadable(mongo),
+					Checker:          checkReadable(connection),
 				},
 			},
 		},
@@ -54,9 +54,9 @@ func Healthchecks(mongo db.DB) func(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func checkWritable(mongo db.DB) func() (string, error) {
+func checkWritable(connection db.Connection) func() (string, error) {
 	return func() (string, error) {
-		connection, err := mongo.Open()
+		err := connection.Ping()
 		if err != nil {
 			return "Failed to establish connection to MongoDB", err
 		}
@@ -70,9 +70,9 @@ func checkWritable(mongo db.DB) func() (string, error) {
 	}
 }
 
-func checkReadable(mongo db.DB) func() (string, error) {
+func checkReadable(connection db.Connection) func() (string, error) {
 	return func() (string, error) {
-		connection, err := mongo.Open()
+		err := connection.Ping()
 		if err != nil {
 			return "Failed to establish connection to MongoDB", err
 		}
@@ -87,10 +87,10 @@ func checkReadable(mongo db.DB) func() (string, error) {
 }
 
 // GoodToGo is the /__gtg endpoint
-func GoodToGo(mongo db.DB) gtg.StatusChecker {
+func GoodToGo(connection db.Connection) gtg.StatusChecker {
 	checks := []gtg.StatusChecker{
-		newStatusChecker(checkReadable(mongo)),
-		newStatusChecker(checkWritable(mongo)),
+		newStatusChecker(checkReadable(connection)),
+		newStatusChecker(checkWritable(connection)),
 	}
 	return gtg.FailFastParallelCheck(checks)
 }

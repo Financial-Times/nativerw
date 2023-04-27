@@ -14,15 +14,9 @@ import (
 )
 
 // WriteContent writes a new native record
-func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
+func WriteContent(connection db.Connection, ts TimestampCreator) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
@@ -35,7 +29,7 @@ func WriteContent(mongo db.DB, ts TimestampCreator) func(w http.ResponseWriter, 
 		contentRevision := ts.CreateTimestamp()
 		contentRevisionStr := r.Header.Get(ContentRevisionHeader)
 		if contentRevisionStr != "" {
-			contentRevision, err = strconv.ParseInt(contentRevisionStr, 10, 64)
+			_, err := strconv.ParseInt(contentRevisionStr, 10, 64)
 			if err != nil {
 				msg := "Invalid content-revision"
 				logger.WithMonitoringEvent("SaveToNative", tid, contentType).WithUUID(resourceID).WithError(err).Error(msg)
