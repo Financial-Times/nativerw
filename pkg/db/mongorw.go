@@ -73,8 +73,8 @@ func createMapWithAllowedCollections(collections []string) map[string]bool {
 func (ma *mongoConnection) EnsureIndex() {
 	index := mongo.IndexModel{
 		Keys: bsonx.Doc{
-			{"uuid", bsonx.Int32(1)},
-			{"content-revision", bsonx.Int32(1)},
+			{Key: "uuid", Value: bsonx.Int32(1)},
+			{Key: "content-revision", Value: bsonx.Int32(1)},
 		},
 		Options: options.Index().
 			SetName("uuid-revision-index").
@@ -141,7 +141,7 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
 	opts := options.FindOne().
 		SetSort(bsonx.Doc{
-			{"content-revision", bsonx.Int32(-1)},
+			{Key: "content-revision", Value: bsonx.Int32(-1)},
 		})
 	result := coll.FindOne(ctx, bson.M{uuidName: bsonUUID}, opts)
 
@@ -282,7 +282,7 @@ func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan
 		var result map[string]interface{}
 		for cur.Next(ctx) {
 			if ctx.Err() != nil {
-				//for some reason canceling the context doesn't cancel the `cur.Next()`
+				//canceling the context doesn't cancel the `cur.Next()` until the batch fetch is exhausted
 				break
 			}
 			if err := cur.Decode(&result); err != nil {

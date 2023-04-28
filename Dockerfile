@@ -12,6 +12,9 @@ COPY ./configs/config.json /artifacts/configs/config.json
 COPY . ${SRC_FOLDER}
 WORKDIR ${SRC_FOLDER}
 
+ARG GITHUB_USERNAME
+ARG GITHUB_TOKEN
+
 # Build app
 RUN VERSION="version=$(git describe --tag --always 2> /dev/null)" \
   && DATETIME="dateTime=$(date -u +%Y%m%d%H%M%S)" \

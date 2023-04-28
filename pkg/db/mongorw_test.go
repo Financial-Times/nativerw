@@ -2,12 +2,12 @@ package db
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"testing"
 	"time"
 
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/nativerw/pkg/mapper"

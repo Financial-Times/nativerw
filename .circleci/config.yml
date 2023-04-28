@@ -12,7 +12,7 @@ jobs:
           MONGO_TEST_URL: mongodb://localhost:27017
           CIRCLE_TEST_REPORTS: /tmp/test-results
           CIRCLE_COVERAGE_REPORT: /tmp/coverage-results
-      - image: mongo:3.2.18
+      - image: mongo:3.6
     steps:
       - checkout
       - ft-golang-ci/build
@@ -22,7 +22,9 @@ jobs:
 workflows:
   test-and-build-docker:
     jobs:
-      - build
+      - build:
+          name: build
+          context: cm-team-github
       - ft-golang-ci/docker-build:
           name: build-docker-image
           requires:
