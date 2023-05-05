@@ -29,7 +29,7 @@ func startMongo(t *testing.T) (Connection, error) {
 		return nil, err
 	}
 
-	return &mongoConnection{
+	return &MongoConnection{
 		dbName: "native-store",
 		client: client,
 		collections: map[string]bool{

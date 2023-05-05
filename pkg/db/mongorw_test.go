@@ -68,7 +68,7 @@ func TestEnsureIndexes(t *testing.T) {
 	assert.NoError(t, err)
 
 	connection.EnsureIndex()
-	indexes := connection.(*mongoConnection).client.Database("native-store").Collection("universal-content").Indexes()
+	indexes := connection.(*MongoConnection).client.Database("native-store").Collection("universal-content").Indexes()
 
 	assert.NoError(t, err)
 	count := 0

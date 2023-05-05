@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pborman/uuid"
@@ -21,9 +20,13 @@ import (
 const (
 	uuidName            = "uuid"
 	contentRevisionName = "content-revision"
+
+	mongoConnectionTimeout       = time.Second * 30
+	mongoIndexCreationTimeout    = time.Second * 15
+	mongoDefaultOperationTimeout = time.Second * 5
 )
 
-type mongoConnection struct {
+type MongoConnection struct {
 	dbName      string
 	client      *mongo.Client
 	collections map[string]bool
@@ -44,21 +47,19 @@ type Connection interface {
 }
 
 // NewDBConnection dials the mongo cluster, and returns a new handler DB instance
-func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string) (Connection, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string) (MongoConnection, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoConnectionTimeout)
 	defer cancel()
 	client, err := documentdb.NewClient(ctx, docDBConf)
 	if err != nil {
-		return nil, err
+		return MongoConnection{}, err
 	}
 
 	colls := createMapWithAllowedCollections(collections)
-	connection := &mongoConnection{docDBConf.Database, client, colls}
-
-	return connection, err
+	return MongoConnection{docDBConf.Database, client, colls}, nil
 }
 
-func (ma *mongoConnection) GetSupportedCollections() map[string]bool {
+func (ma *MongoConnection) GetSupportedCollections() map[string]bool {
 	return ma.collections
 }
 
@@ -70,7 +71,7 @@ func createMapWithAllowedCollections(collections []string) map[string]bool {
 	return collectionMap
 }
 
-func (ma *mongoConnection) EnsureIndex() {
+func (ma *MongoConnection) EnsureIndex() {
 	index := mongo.IndexModel{
 		Keys: bsonx.Doc{
 			{Key: "uuid", Value: bsonx.Int32(1)},
@@ -81,7 +82,7 @@ func (ma *mongoConnection) EnsureIndex() {
 			SetUnique(true),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoIndexCreationTimeout)
 	defer cancel()
 
 	for coll := range ma.collections {
@@ -92,24 +93,23 @@ func (ma *mongoConnection) EnsureIndex() {
 	}
 }
 
-func (ma *mongoConnection) Delete(collection string, uuidString string, revision int64) error {
+func (ma *MongoConnection) Delete(collection string, uuidString string, revision int64) error {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
-	rs, err := coll.DeleteOne(ctx, bsonx.Doc{
+	_, err := coll.DeleteOne(ctx, bsonx.Doc{
 		{Key: uuidName, Value: bsonUUID},
 		{Key: contentRevisionName, Value: bsonx.Int64(revision)},
 	})
-	fmt.Println(rs.DeletedCount)
 
 	return err
 }
 
-func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) error {
+func (ma *MongoConnection) Write(collection string, resource *mapper.Resource) error {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(resource.UUID))
@@ -133,9 +133,9 @@ func (ma *mongoConnection) Write(collection string, resource *mapper.Resource) e
 	return err
 }
 
-func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error) {
+func (ma *MongoConnection) Read(collection string, uuidString string) (res *mapper.Resource, found bool, err error) {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
@@ -161,9 +161,9 @@ func (ma *mongoConnection) Read(collection string, uuidString string) (res *mapp
 	return res, true, nil
 }
 
-func (ma *mongoConnection) ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error) {
+func (ma *MongoConnection) ReadSingleRevision(collection string, uuidString string, revision int64) (res *mapper.Resource, err error) {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
@@ -187,7 +187,7 @@ func (ma *mongoConnection) ReadSingleRevision(collection string, uuidString stri
 	return res, nil
 }
 
-func (ma *mongoConnection) mapBsonToResource(bsonResource map[string]interface{}) *mapper.Resource {
+func (ma *MongoConnection) mapBsonToResource(bsonResource map[string]interface{}) *mapper.Resource {
 	uuidData := bsonResource["uuid"].(primitive.Binary).Data
 
 	res := &mapper.Resource{
@@ -214,9 +214,9 @@ func (ma *mongoConnection) mapBsonToResource(bsonResource map[string]interface{}
 	return res
 }
 
-func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
+func (ma *MongoConnection) ReadRevisions(collection string, uuidString string) (res []int64, err error) {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
@@ -248,9 +248,9 @@ func (ma *mongoConnection) ReadRevisions(collection string, uuidString string) (
 	return res, nil
 }
 
-func (ma *mongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int64, err error) {
+func (ma *MongoConnection) Count(collection string, uuidString string, contentRevision int64) (count int64, err error) {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	bsonUUID := bsonx.Binary(0x04, uuid.Parse(uuidString))
@@ -262,7 +262,7 @@ func (ma *mongoConnection) Count(collection string, uuidString string, contentRe
 	return n, nil
 }
 
-func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan string, error) {
+func (ma *MongoConnection) ReadIDs(ctx context.Context, collection string) (chan string, error) {
 	coll := ma.client.Database(ma.dbName).Collection(collection)
 
 	opts := options.Find().
@@ -295,8 +295,8 @@ func (ma *mongoConnection) ReadIDs(ctx context.Context, collection string) (chan
 	return ids, nil
 }
 
-func (ma *mongoConnection) Ping() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+func (ma *MongoConnection) Ping() error {
+	ctx, cancel := context.WithTimeout(context.Background(), mongoDefaultOperationTimeout)
 	defer cancel()
 
 	return ma.client.Ping(ctx, readpref.Primary())

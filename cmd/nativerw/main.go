@@ -88,7 +88,7 @@ func main() {
 			logger.WithError(err).
 				Fatal("Unable to connect to DocumentDB")
 		}
-		router(mongo, tidsToSkipRegex, *disablePurge)
+		router(&mongo, tidsToSkipRegex, *disablePurge)
 
 		go func() {
 			logger.Info("Established connection to mongoDB.")
