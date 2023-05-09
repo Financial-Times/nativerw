@@ -176,7 +176,7 @@ func TestCancelReadIDs(t *testing.T) {
 		uuid, ok := <-ids
 
 		if !ok {
-			assert.Equal(t, 8, count) // count should be 8, which is the size of the channel
+			assert.True(t, count == 8 || count == 9) // count should be 8, which is the size of the channel or 9 because the channel is loaded in a goroutine
 			break
 		}
 
