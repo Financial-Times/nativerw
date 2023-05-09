@@ -7,7 +7,7 @@ require (
 	github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90
 	github.com/Financial-Times/service-status-go v0.2.0
 	github.com/Financial-Times/transactionid-utils-go v1.0.0
-	github.com/Financial-Times/upp-go-sdk v1.3.4
+	github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc0
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jawher/mow.cli v1.0.4

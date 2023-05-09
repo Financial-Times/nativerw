@@ -47,16 +47,16 @@ type Connection interface {
 }
 
 // NewDBConnection dials the mongo cluster, and returns a new handler DB instance
-func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string) (MongoConnection, error) {
+func NewDBConnection(docDBConf documentdb.ConnectionParams, collections []string) (*MongoConnection, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), mongoConnectionTimeout)
 	defer cancel()
 	client, err := documentdb.NewClient(ctx, docDBConf)
 	if err != nil {
-		return MongoConnection{}, err
+		return nil, err
 	}
 
 	colls := createMapWithAllowedCollections(collections)
-	return MongoConnection{docDBConf.Database, client, colls}, nil
+	return &MongoConnection{docDBConf.Database, client, colls}, nil
 }
 
 func (ma *MongoConnection) GetSupportedCollections() map[string]bool {
