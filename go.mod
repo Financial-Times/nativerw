@@ -1,13 +1,13 @@
 module github.com/Financial-Times/nativerw
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
 	github.com/Financial-Times/go-logger v0.0.0-20180323124113-febee6537e90
 	github.com/Financial-Times/service-status-go v0.2.0
 	github.com/Financial-Times/transactionid-utils-go v1.0.0
-	github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1
+	github.com/Financial-Times/upp-go-sdk v1.4.0-dev-rc0
 	github.com/google/go-cmp v0.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jawher/mow.cli v1.0.4
