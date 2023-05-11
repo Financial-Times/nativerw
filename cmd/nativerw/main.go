@@ -82,6 +82,7 @@ func main() {
 			Username: *dbUsername,
 			Password: *dbPassword,
 			Database: conf.DBName,
+			UseSrv:   true,
 		}
 		mongo, err := db.NewDBConnection(docdb, conf.Collections)
 		if err != nil {
