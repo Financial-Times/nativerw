@@ -10,6 +10,8 @@ github.com/Financial-Times/upp-go-sdk v1.3.4 h1:uHTjGISVFbHpcNp2bG6lpi/Z8PdbCpCp
 github.com/Financial-Times/upp-go-sdk v1.3.4/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
 github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc0 h1:8omVxt5Ygj+XgsRSq7mayXxWtEG8uqDGwb5lH8m8GLg=
 github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc0/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
+github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1 h1:7C8BUbys86ewyG3HEdFaqX3meGKkhMj8p10ir+wfjRo=
+github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
