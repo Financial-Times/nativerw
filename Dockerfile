@@ -27,15 +27,10 @@ RUN VERSION="version=$(git describe --tag --always 2> /dev/null)" \
   && CGO_ENABLED=0 go build -mod=readonly -a -o /artifacts/${PROJECT} -ldflags="${LDFLAGS}" ./cmd/${PROJECT} \
   && echo "Build flags: ${LDFLAGS}"
 
-# Download required Amazon certificate to authenticate to the Document DB cluster
-RUN mkdir -p /tmp/amazonaws
-WORKDIR /tmp/amazonaws
-RUN apt-get update && apt-get install -y wget && wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem
 
 FROM scratch
 WORKDIR /
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=0 /artifacts/ /
-COPY --from=0 /tmp/amazonaws/* /
 
 CMD [ "/nativerw" ]

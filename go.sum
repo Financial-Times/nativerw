@@ -6,10 +6,6 @@ github.com/Financial-Times/service-status-go v0.2.0 h1:ajT52zmCj0Ih4bq2zWsWOnMY4
 github.com/Financial-Times/service-status-go v0.2.0/go.mod h1:eab7/Pnkftoni5XXKTUeXDUH7832uczOyGUPSwfVXNM=
 github.com/Financial-Times/transactionid-utils-go v1.0.0 h1:X7D+ouW1KyRcZo+jLDjXKfM1RY1U4/5BvHPw57DbZEQ=
 github.com/Financial-Times/transactionid-utils-go v1.0.0/go.mod h1:Aeqj+Ye4pLO9ostLZAxEUK4AbkXCrW1DeuMhxnNxPXw=
-github.com/Financial-Times/upp-go-sdk v1.3.4 h1:uHTjGISVFbHpcNp2bG6lpi/Z8PdbCpCpUNqVXCYFTcE=
-github.com/Financial-Times/upp-go-sdk v1.3.4/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
-github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc0 h1:8omVxt5Ygj+XgsRSq7mayXxWtEG8uqDGwb5lH8m8GLg=
-github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc0/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
 github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1 h1:7C8BUbys86ewyG3HEdFaqX3meGKkhMj8p10ir+wfjRo=
 github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -31,7 +27,6 @@ github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQ
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
-github.com/kr/pty v1.1.1 h1:VkoXIwSboBpnk99O/KFauAEILuNHv5DVFKZMBN/gUgw=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
@@ -69,7 +64,6 @@ go.mongodb.org/mongo-driver v1.11.4 h1:4ayjakA013OdpGyL2K3ZqylTac/rMjrJOMZ1EHizX
 go.mongodb.org/mongo-driver v1.11.4/go.mod h1:PTSz5yu21bkT/wXpkS7WR5f0ddqw5quethTUn9WM+2g=
 golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d h1:sK3txAijHtOK88l68nt020reeT1ZdKLIYetKl95FzVY=
 golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
-golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 h1:6zppjxzCulZykYSLyVDYbneBfbaBIQPYMevg0bEwv2s=
 golang.org/x/net v0.0.0-20210119194325-5f4716e94777/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20211123202848-9e5a29745d54 h1:CIhTfGs+z2NBqcn+cfZ2Tnyg+fd6rP41sC8ykB86JzQ=
@@ -89,7 +83,6 @@ golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
 golang.org/x/text v0.3.8 h1:nAL+RVCQ9uMn3vJZbV+MRnydTJFPf8qqY42YiA6MrqY=
 golang.org/x/text v0.3.8/go.mod h1:E6s5w1FMmriuDzIBO73fBruAKo1PCIq6d2Q6DHfQ8WQ=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
-golang.org/x/tools v0.1.12 h1:VveCTK38A2rkS8ZqFY25HIDFscX5X9OoEhJd3quQmXU=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gopkg.in/airbrake/gobrake.v2 v2.0.9 h1:7z2uVWwn7oVeeugY1DtlPAy5H+KYgB1KeKTnqjNatLo=
