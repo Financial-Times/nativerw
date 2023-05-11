@@ -6,8 +6,8 @@ github.com/Financial-Times/service-status-go v0.2.0 h1:ajT52zmCj0Ih4bq2zWsWOnMY4
 github.com/Financial-Times/service-status-go v0.2.0/go.mod h1:eab7/Pnkftoni5XXKTUeXDUH7832uczOyGUPSwfVXNM=
 github.com/Financial-Times/transactionid-utils-go v1.0.0 h1:X7D+ouW1KyRcZo+jLDjXKfM1RY1U4/5BvHPw57DbZEQ=
 github.com/Financial-Times/transactionid-utils-go v1.0.0/go.mod h1:Aeqj+Ye4pLO9ostLZAxEUK4AbkXCrW1DeuMhxnNxPXw=
-github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1 h1:7C8BUbys86ewyG3HEdFaqX3meGKkhMj8p10ir+wfjRo=
-github.com/Financial-Times/upp-go-sdk v1.3.5-dev-rc1/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
+github.com/Financial-Times/upp-go-sdk v1.4.0-dev-rc0 h1:I86Lej24Z/OM1q9edxmlJMTKNE1dAyc+A6S6o2qw3NU=
+github.com/Financial-Times/upp-go-sdk v1.4.0-dev-rc0/go.mod h1:HjOzTS96WvTaxqMSstgI9RfAO6ccdj+JcE3b63g25ms=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
