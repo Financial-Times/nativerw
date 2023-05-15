@@ -45,12 +45,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: global-secrets
-              key: aws.native-store.username
+              key: nativestore.cluster.username
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: global-secrets
-              key: aws.native-store.password
+              key: nativestore.cluster.password
         - name: TIDS_TO_SKIP
           value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
         - name: DISABLE_PURGE
