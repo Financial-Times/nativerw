@@ -6,7 +6,7 @@ The same data can then be read from here just like from the original CMS.__
 
 ## Installation
 
-You need [Go to be installed](https://golang.org/doc/install). Please read about Go and about [How to Write Go Code](https://golang.org/doc/code.html) before jumping right in. For example you will need Git, Mercurial, Bazaar installed and working, so that Go can use them to retrieve dependencies. For this additionally you will also need a computer etc. Hope this helps.
+You need [Go to be installed](https://golang.org/doc/install). Please read about Go and about [How to Write Go Code](https://golang.org/doc/code.html) before jumping right in. For example, you will need Git, Mercurial, Bazaar installed and working, so that Go can use them to retrieve dependencies. For this additionally you will also need a computer etc. Hope this helps.
 
 For the first time: `go get github.com/Financial-Times/nativerw`.
 
@@ -21,26 +21,28 @@ docker build -t coco/nativerw .
 
 ## Running
 The following params can be injected in the nativerw app on startup through environment variables:
- - `MONGOS` This env var is mandatory. Mongo addresses to connect to in format: host1:port1[,host2:port2,...] the app will exit (with `exit code 1`) it is not valid. The `MONGOS` value is considered to be valid if the number of provided URLs matches the provided `MONGO_NODE_COUNT` and each MongoDb URL has host:port.
- - `MONGO_NODE_COUNT` The number of MongoDB instances. Default value is 3.
+ - `DB_CLUSTER_ADDRESS` Database cluster address.
+ - `DB_USERNAME` Username to connect to database.
+ - `DB_PASSWORD` Password to connect to database.
  - `CONFIG` Config file in json format. If not set, the default `config.json` will be used.
  - `TIDS_TO_SKIP` Regular expression defining transaction-id's to be skipped from storing in nativerw
  - `DISABLE-PURGE` Disables the `purge` endpoint
 
 To run locally against `dev` native store:
-1. Port forward the `main` node
+1. Get the url and credentials for the instance in LastPass
    
-   `kubectx eks-publish-dev-eu`
-   
-    `kubectl port-forward mongodb-<id> 27017:27017`
+    ```bash
+   export DB_CLUSTER_ADDRESS="url.to.document-db.cluster:27017"
+   export DB_USERNAME="username"
+   export DB_PASSWORD="password"
+    ````
 
 2. Run with the required ENV vars
     
-    bash
-   
-    `
-    MONGOS=localhost:27017 MONGO_NODE_COUNT=1 TIDS_TO_SKIP=none go run cmd/nativerw/main.go
-    `
+    ```bash
+   TIDS_TO_SKIP=none go run cmd/nativerw/main.go
+   ```
+
 ## API
 
 The nativerw supports the following endpoints:
@@ -52,7 +54,7 @@ The nativerw supports the following endpoints:
 * PATCH `/{collection}/{uuid}` updates specific fields for the given uuid/revision. If no revision is provided a new one is generated based on the current date/time
 * DELETE `/{collection}/{uuid}` marks a document as deleted in the store by inserting new revision in the MongoDB
 * DELETE `/{collection}/purge/{uuid}/{revision}` physically deletes a document revision from the store
-* GET `/{collection}/__ids` returns all uuids for the given collection on a **best efforts basis**. If the collection is very large, the endpoint is likely to time out (timeout duration is hardcoded to 10s) before all uuids have been returned. This will be indistinguishable from a request which sends back the complete set of uuids, however, if there are less than ~10,000 uuids returned, you can be fairly confident you have the entire set.
+* GET `/{collection}/__ids` returns all uuids for the given collection on a **best efforts' basis**. If the collection is very large, the endpoint is likely to time out (timeout duration is hardcoded to 10s) before all uuids have been returned. This will be indistinguishable from a request which sends back the complete set of uuids, however, if there are less than ~10,000 uuids returned, you can be fairly confident you have the entire set.
 * GET `/__gtg` the good to go endpoint.
 * GET `/__health` the health endpoint.
 

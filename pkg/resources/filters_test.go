@@ -43,15 +43,11 @@ func TestValidateAccess(t *testing.T) {
 	next := func(w http.ResponseWriter, r *http.Request) {
 		forwarded = true
 	}
-
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("GetSupportedCollections").Return(testCollections)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccess(mongo).Build()).Methods("GET")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccess(connection).Build()).Methods("GET")
 
 	for _, test := range validationTests {
 		forwarded = false
@@ -59,7 +55,7 @@ func TestValidateAccess(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/"+test.collectionID+"/"+test.resourceID, ioutil.NopCloser(nil))
 
 		router.ServeHTTP(w, req)
-		mongo.AssertExpectations(t)
+		connection.AssertExpectations(t)
 		if test.expectedError == nil {
 			assert.Equal(t, http.StatusOK, w.Code)
 			assert.True(t, forwarded)
@@ -76,14 +72,11 @@ func TestValidateAccessForCollection(t *testing.T) {
 		forwarded = true
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("GetSupportedCollections").Return(testCollections)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccessForCollection(mongo).Build()).Methods("GET")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccessForCollection(connection).Build()).Methods("GET")
 
 	for _, test := range validationTests {
 		forwarded = false
@@ -91,7 +84,7 @@ func TestValidateAccessForCollection(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/"+test.collectionID+"/"+test.resourceID, ioutil.NopCloser(nil))
 
 		router.ServeHTTP(w, req)
-		mongo.AssertExpectations(t)
+		connection.AssertExpectations(t)
 		if test.expectedError == nil {
 			assert.Equal(t, http.StatusOK, w.Code)
 			assert.True(t, forwarded)
@@ -100,42 +93,4 @@ func TestValidateAccessForCollection(t *testing.T) {
 			assert.False(t, forwarded)
 		}
 	}
-}
-
-func TestFailedMongoDuringAccessValidation(t *testing.T) {
-	next := func(w http.ResponseWriter, r *http.Request) {
-		t.Fail()
-	}
-
-	mongo := new(MockDB)
-	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
-
-	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccess(mongo).Build()).Methods("GET")
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/universal-content/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
-
-	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
-}
-
-func TestFailedMongoDuringCollectionValidation(t *testing.T) {
-	next := func(w http.ResponseWriter, r *http.Request) {
-		t.Fail()
-	}
-
-	mongo := new(MockDB)
-	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
-
-	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).ValidateAccessForCollection(mongo).Build()).Methods("GET")
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/universal-content/9694733e-163a-4393-801f-000ab7de5041", ioutil.NopCloser(nil))
-
-	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }

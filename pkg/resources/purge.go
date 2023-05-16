@@ -13,15 +13,9 @@ import (
 )
 
 // PurgeContent deletes the given resource from the given collection
-func PurgeContent(mongo db.DB) func(writer http.ResponseWriter, req *http.Request) {
+func PurgeContent(connection db.Connection) func(writer http.ResponseWriter, req *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-
-		connection, err := mongo.Open()
-		if err != nil {
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
 
 		tid := transactionidutils.GetTransactionIDFromRequest(r)
 

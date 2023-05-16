@@ -20,10 +20,7 @@ func (f *fixedTimestampCreator) CreateTimestamp() int64 {
 }
 
 func TestWriteContent(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write",
 		"universal-content",
 		&mapper.Resource{
@@ -38,7 +35,7 @@ func TestWriteContent(t *testing.T) {
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(connection, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
@@ -46,22 +43,19 @@ func TestWriteContent(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestWriteContentWhenContentRevisionExists(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Count", "universal-content", "a-real-uuid", int64(1436773875771421417)).
 		Return(1, nil)
 
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(connection, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
@@ -69,15 +63,12 @@ func TestWriteContentWhenContentRevisionExists(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestWriteContentWithCharsetDirective(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 
 	connection.On("Write",
 		"universal-content",
@@ -93,7 +84,7 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(connection, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
@@ -101,15 +92,12 @@ func TestWriteContentWithCharsetDirective(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestWriteFailed(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Write",
 		"universal-content",
 		&mapper.Resource{
@@ -125,7 +113,7 @@ func TestWriteFailed(t *testing.T) {
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(connection, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`{}`))
@@ -133,20 +121,16 @@ func TestWriteFailed(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
 func TestFailedJSON(t *testing.T) {
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 
 	ts := fixedTimestampCreator{}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", WriteContent(mongo, &ts)).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", WriteContent(connection, &ts)).Methods("POST")
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", strings.NewReader(`i am not json`))
@@ -154,6 +138,6 @@ func TestFailedJSON(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	router.ServeHTTP(w, req)
-	mongo.AssertExpectations(t)
+	connection.AssertExpectations(t)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

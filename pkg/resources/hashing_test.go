@@ -41,14 +41,12 @@ func TestHashCheckMatches(t *testing.T) {
 		ContentType: "application/json",
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
 
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", "universal-content", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
@@ -59,7 +57,6 @@ func TestHashCheckMatches(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
 	assert.False(t, passed)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -80,14 +77,12 @@ func TestHashCheckDoesntMatch(t *testing.T) {
 		ContentType: "application/json",
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
 
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", "universal-content", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
@@ -98,7 +93,7 @@ func TestHashCheckDoesntMatch(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
+	mock.AssertExpectationsForObjects(t, connection, body)
 	assert.False(t, passed)
 	assert.Equal(t, http.StatusConflict, w.Code)
 }
@@ -109,14 +104,11 @@ func TestNoContentFound(t *testing.T) {
 		passed = true
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{}, false, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
@@ -127,7 +119,7 @@ func TestNoContentFound(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
+	mock.AssertExpectationsForObjects(t, connection, body)
 	assert.False(t, passed)
 	assert.Equal(t, http.StatusConflict, w.Code)
 }
@@ -138,14 +130,11 @@ func TestHashCheckContentReadFails(t *testing.T) {
 		passed = true
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", "universal-content", "a-real-uuid").Return(&mapper.Resource{}, false, errors.New("i failed"))
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
@@ -156,7 +145,7 @@ func TestHashCheckContentReadFails(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
+	mock.AssertExpectationsForObjects(t, connection, body)
 	assert.False(t, passed)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }
@@ -173,14 +162,11 @@ func TestHashCheckJsonMarshalFails(t *testing.T) {
 		ContentType: "application/json",
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
 	connection.On("Read", "universal-content", "a-real-uuid").Return(expectedResource, true, nil)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 	body.On("Close").Return(nil)
@@ -191,7 +177,7 @@ func TestHashCheckJsonMarshalFails(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
+	mock.AssertExpectationsForObjects(t, connection, body)
 	assert.False(t, passed)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }
@@ -202,13 +188,9 @@ func TestNoHashCheckIfNoHeader(t *testing.T) {
 		passed = true
 	}
 
-	mongo := new(MockDB)
 	connection := new(MockConnection)
-
-	mongo.On("Open").Return(connection, nil)
-
 	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
+	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(connection).Build()).Methods("POST")
 
 	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
 
@@ -217,30 +199,7 @@ func TestNoHashCheckIfNoHeader(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	mock.AssertExpectationsForObjects(t, mongo, body)
+	mock.AssertExpectationsForObjects(t, connection, body)
 	assert.True(t, passed)
 	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestFailedMongoDuringHashFilter(t *testing.T) {
-	next := func(w http.ResponseWriter, r *http.Request) {
-		t.Fail()
-	}
-
-	mongo := new(MockDB)
-	mongo.On("Open").Return(nil, errors.New("no data 4 u"))
-
-	router := mux.NewRouter()
-	router.HandleFunc("/{collection}/{resource}", Filter(next).CheckNativeHash(mongo).Build()).Methods("POST")
-
-	body := &mapper.MockBody{Body: strings.NewReader(`{}`)}
-	body.On("Close").Return(nil)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/universal-content/a-real-uuid", body)
-
-	router.ServeHTTP(w, req)
-
-	mock.AssertExpectationsForObjects(t, mongo, body)
-	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }

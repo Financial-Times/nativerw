@@ -7,9 +7,8 @@ import (
 	"regexp"
 
 	"github.com/Financial-Times/go-logger"
-	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
-
 	"github.com/Financial-Times/nativerw/pkg/db"
+	transactionidutils "github.com/Financial-Times/transactionid-utils-go"
 	"github.com/gorilla/mux"
 )
 
@@ -35,16 +34,9 @@ func validateAccessForCollection(mongo db.Connection, collectionID string) error
 }
 
 // ValidateAccess validates whether the collection exists and the resource ID is in uuid format.
-func (f *Filters) ValidateAccess(mongo db.DB) *Filters {
+func (f *Filters) ValidateAccess(connection db.Connection) *Filters {
 	next := f.next
 	f.next = func(w http.ResponseWriter, r *http.Request) {
-		connection, err := mongo.Open()
-		if err != nil {
-			defer r.Body.Close()
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
-
 		collectionID := mux.Vars(r)["collection"]
 		resourceID := mux.Vars(r)["resource"]
 
@@ -106,16 +98,9 @@ func (f *Filters) SkipSpecificRequests(tidsPattern *regexp.Regexp) *Filters {
 }
 
 // ValidateAccessForCollection validates whether the collection exists
-func (f *Filters) ValidateAccessForCollection(mongo db.DB) *Filters {
+func (f *Filters) ValidateAccessForCollection(connection db.Connection) *Filters {
 	next := f.next
 	f.next = func(w http.ResponseWriter, r *http.Request) {
-		connection, err := mongo.Open()
-		if err != nil {
-			defer r.Body.Close()
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
-
 		collection := mux.Vars(r)["collection"]
 
 		if err := validateAccessForCollection(connection, collection); err != nil {

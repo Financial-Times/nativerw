@@ -27,17 +27,10 @@ func Hash(payload string) string {
 }
 
 // CheckNativeHash will check for the X-Native-Hash header and compare it to the current saved copy of the same resource
-func (f *Filters) CheckNativeHash(mongo db.DB) *Filters {
+func (f *Filters) CheckNativeHash(connection db.Connection) *Filters {
 	next := f.next
 
 	f.next = func(w http.ResponseWriter, r *http.Request) {
-		connection, err := mongo.Open()
-		if err != nil {
-			defer r.Body.Close()
-			writeMessage(w, "Failed to connect to the database!", http.StatusServiceUnavailable)
-			return
-		}
-
 		nativeHash := r.Header.Get("X-Native-Hash")
 
 		if strings.TrimSpace(nativeHash) != "" {

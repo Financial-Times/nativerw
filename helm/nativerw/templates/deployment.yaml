@@ -36,11 +36,21 @@ spec:
           limits:
             memory: 256Mi
         env:
-        - name: MONGOS
+        - name: DB_CLUSTER_ADDRESS
           valueFrom:
             configMapKeyRef:
               name: global-config
-              key: mongo.addresses
+              key: nativestore.cluster.address
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: global-secrets
+              key: nativestore.cluster.username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: global-secrets
+              key: nativestore.cluster.password
         - name: TIDS_TO_SKIP
           value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
         - name: DISABLE_PURGE

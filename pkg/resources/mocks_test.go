@@ -5,32 +5,12 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/Financial-Times/nativerw/pkg/db"
 	"github.com/Financial-Times/nativerw/pkg/mapper"
 )
 
 type MockConnection struct {
 	mock.Mock
 	CallArgs []interface{}
-}
-
-type MockDB struct {
-	mock.Mock
-}
-
-func (m *MockDB) Open() (db.Connection, error) {
-	args := m.Called()
-	conn := args.Get(0)
-	if conn != nil {
-		return conn.(*MockConnection), args.Error(1)
-	}
-
-	return nil, args.Error(1)
-}
-
-func (m *MockDB) Await() (db.Connection, error) {
-	args := m.Called()
-	return args.Get(0).(*MockConnection), args.Error(1)
 }
 
 func (m *MockConnection) EnsureIndex() {
@@ -77,7 +57,12 @@ func (m *MockConnection) ReadRevisions(collection string, uuidString string) (re
 	return args.Get(0).([]int64), args.Error(1)
 }
 
-func (m *MockConnection) Count(collection string, uuidString string, contentRevision int64) (count int, err error) {
+func (m *MockConnection) Count(collection string, uuidString string, contentRevision int64) (count int64, err error) {
 	args := m.Called(collection, uuidString, contentRevision)
-	return args.Int(0), args.Error(1)
+	return int64(args.Int(0)), args.Error(1)
+}
+
+func (m *MockConnection) Ping() error {
+	m.Called()
+	return nil
 }
