@@ -44,12 +44,12 @@ spec:
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
-              name: global-secrets
+              name: doppler-global-secret
               key: NATIVESTORE_CLUSTER_USERNAME
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: global-secrets
+              name: doppler-global-secret
               key: NATIVESTORE_CLUSTER_PASSWORD
         - name: TIDS_TO_SKIP
           value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
