@@ -44,13 +44,13 @@ spec:
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
-              name: global-secrets
-              key: nativestore.cluster.username
+              name: doppler-global-secrets
+              key: NATIVESTORE_CLUSTER_USERNAME
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: global-secrets
-              key: nativestore.cluster.password
+              name: doppler-global-secrets
+              key: NATIVESTORE_CLUSTER_PASSWORD
         - name: TIDS_TO_SKIP
           value: "^(tid_[0-9]+_carousel_[0-9]+_gentx|SYNTHETIC-REQ-MON.+)"
         - name: DISABLE_PURGE
