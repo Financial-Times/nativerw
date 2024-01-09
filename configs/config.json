@@ -8,6 +8,7 @@
       "video",
       "video-metadata",
       "pac-metadata",
-      "pages"
+      "pages",
+      "manual-metadata"
    ]
 }
