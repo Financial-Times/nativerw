@@ -9,6 +9,7 @@
       "video-metadata",
       "pac-metadata",
       "pages",
-      "manual-metadata"
+      "manual-metadata",
+      "draft-annotations"
    ]
 }
