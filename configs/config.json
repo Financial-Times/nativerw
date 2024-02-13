@@ -10,6 +10,7 @@
       "pac-metadata",
       "pages",
       "manual-metadata",
-      "draft-annotations"
+      "draft-annotations",
+      "content-relation"
    ]
 }

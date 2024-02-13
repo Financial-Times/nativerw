@@ -18,14 +18,15 @@ func TestConfigFromReader(t *testing.T) {
             "video",
             "universal-content",
             "pac-metadata",
-			"manual-metadata"
+			"manual-metadata",
+			"content-relation"
          ]
       }`)
 	config, err := ReadConfigFromReader(reader)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "native-store", config.DBName)
-	assert.Equal(t, []string{"video", "universal-content", "pac-metadata", "manual-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "universal-content", "pac-metadata", "manual-metadata", "content-relation"}, config.Collections)
 	assert.Equal(t, 8080, config.Server.Port)
 }
 
@@ -50,7 +51,8 @@ func TestConfigFromFile(t *testing.T) {
             "video",
             "universal-content",
             "pac-metadata",
-			"manual-metadata"
+			"manual-metadata",
+			"content-relation"
          ]
       }`))
 	assert.NoError(t, err)
@@ -59,6 +61,6 @@ func TestConfigFromFile(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "native-store", config.DBName)
-	assert.Equal(t, []string{"video", "universal-content", "pac-metadata", "manual-metadata"}, config.Collections)
+	assert.Equal(t, []string{"video", "universal-content", "pac-metadata", "manual-metadata", "content-relation"}, config.Collections)
 	assert.Equal(t, 8080, config.Server.Port)
 }
