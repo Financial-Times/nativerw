@@ -275,6 +275,13 @@ func TestPatchContentReflection(t *testing.T) {
 			expectedResult: `{"myInt":1,"mySlice":[1,2,3]}`,
 		},
 		{
+			name:           "update a string slice",
+			description:    "In this case the value of the slice should be the one hold by mergeContent",
+			originalC:      `{"myInt":0,"mySlice":["name"]}`,
+			patchC:         `{"myInt":1,"mySlice":["name","forname"]}`,
+			expectedResult: `{"myInt":1,"mySlice":["name","forname"]}`,
+		},
+		{
 			name:           "update a hash (recursion)",
 			description:    "In this case a recursion is applied to update the values of a JSON hash (int, slice)",
 			originalC:      `{"myInt":0,"mySlice":[1], "myHash":{"rInt":100, "rSlice":["a","a","a"]}}`,
