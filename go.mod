@@ -1,6 +1,6 @@
 module github.com/Financial-Times/nativerw
 
-go 1.20
+go 1.21
 
 require (
 	github.com/Financial-Times/go-fthealth v0.0.0-20171204124831-1b007e2b37b7
